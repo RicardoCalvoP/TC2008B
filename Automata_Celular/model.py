@@ -7,33 +7,31 @@ from random import choice
 from agent import TreeCell
 
 class CellularAutomaton(Model):
-  def __init__(self, height=50, width=50, density=0.65):
-    self.schedule = SimultaneousActivation(self)
-    self.grid = SingleGrid(height, width, torus=False)
+    def __init__(self, height=50, width=50, density=0.65):
+        self.schedule = SimultaneousActivation(self)
+        self.grid = SingleGrid(height, width, torus=False)
 
-    self.datacollector = DataCollector(
-            {
-                "Alive": lambda m: self.count_type(m, "Alive"),
-                "Dead": lambda m: self.count_type(m, "Dead"),
-            }
+        self.datacollector = DataCollector(
+        {
+        "Alive": lambda m: self.count_type(m, "Alive"),
+        "Dead": lambda m: self.count_type(m, "Dead")
+        }
         )
 
-    for contents, (x, y) in self.grid.coord_iter():
+        for contents, (x, y) in self.grid.coord_iter():
             if self.random.random() < density:
-                # Create a tree
+        # Create a afent
                 new_tree = TreeCell((x, y), self)
 
-                # Set all trees in the first line alive or dead in random order .
-                if y == 0:
-                  new_tree.condition = choice(["Alive", "Dead"])
-
-
+        # Set all agents in the first line alive or dead in random order .
+                if y == height-1:
+                    new_tree.condition = choice(["Alive", "Dead"])
 
                 self.grid.place_agent(new_tree, (x, y))
                 self.schedule.add(new_tree)
 
-    self.running = True
-    self.datacollector.collect(self)
+        self.running = True
+        self.datacollector.collect(self)
 
     def step(self):
         """
@@ -42,11 +40,6 @@ class CellularAutomaton(Model):
         self.schedule.step()
         # collect data
         self.datacollector.collect(self)
-
-        # Halt if no more fire
-        if self.count_type(self, "On Fire") == 0:
-            self.running = False
-
 
     # staticmethod is a Python decorator that makes a method callable without an instance.
     @staticmethod

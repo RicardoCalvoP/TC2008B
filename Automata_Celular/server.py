@@ -4,8 +4,8 @@ from mesa.visualization import Slider
 
 from model import CellularAutomaton
 
-# The colors of the portrayal will depend on the tree's condition.
-COLORS = {"Fine": "#00AA00", "On Fire": "#880000", "Burned Out": "#000000"}
+# The colors of the portrayal will depend on the agents's condition.
+COLORS = {"Alive": "#FFFFFF", "Dead": "#000000"}
 
 # The portrayal is a dictionary that is used by the visualization server to
 # generate a visualization of the given agent.
@@ -23,7 +23,7 @@ def forest_fire_portrayal(tree):
 # The canvas element will be 500x500 pixels, with each cell being 5x5 pixels.
 # The portrayal method will fill each cell with a representation of the tree
 # that is in that cell.
-canvas_element = CanvasGrid(forest_fire_portrayal, 100, 100, 500, 500)
+canvas_element = CanvasGrid(forest_fire_portrayal, 50, 50, 500, 500)
 
 # The chart will plot the number of each type of tree over time.
 tree_chart = ChartModule(
@@ -37,8 +37,8 @@ pie_chart = PieChartModule(
 
 # The model parameters will be set by sliders controlling the initial density
 model_params = {
-    "height": 100,
-    "width": 100,
+    "height": 50,
+    "width": 50,
     "density": Slider("Tree density", 0.65, 0.01, 1.0, 0.01),
 }
 
