@@ -4,7 +4,7 @@
 // node create_cylinder.js [sides] [radius] [height]
 
 // Function to create file
-function create_file(sides, radius, height, vertexes) {
+function create_file(sides, radius, height, vertexes, faces) {
   const fs = require('fs'); // Library to create files
   const path = require('path'); // Library to check paths
   const outputDir = path.join(__dirname, 'OutputFiles'); // CurrentLocation/OutputFiles
@@ -16,20 +16,20 @@ function create_file(sides, radius, height, vertexes) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const content = `# Cylinder with ${sides} sides, radius ${radius}, height ${height}\n\n${vertexes.join('')}`;
+  const content = `# Cylinder with ${sides} sides, radius ${radius}, height ${height}\n\n${vertexes.join('')}\n\n${faces.join('')}`;
   fs.writeFileSync(outputPath, content);
 }
 
 function calculate_vectors(sides, radius, heigh) {
   const v = [];
-  // const f = [];
 
   // z axis level
   const z = heigh / 2;
-  // Central vertex from Top
-  v.push(`v ${"0".padStart(8)} ${"0".padStart(8)} ${z.toFixed(4).padStart(8)}\n`);
   // Central vertex from bottom
-  v.push(`v ${"0".padStart(8)} ${"0".padStart(8)} ${(-z).toFixed(4).padStart(8)}\n`);
+  v.push(`v ${"0".padStart(8)
+    } ${"0".padStart(8)} ${(-z).toFixed(4).padStart(8)} \n`);
+  // Central vertex from Top
+  v.push(`v ${"0".padStart(8)} ${"0".padStart(8)} ${z.toFixed(4).padStart(8)} \n`);
 
 
   // Get x and y axis for each side
@@ -42,12 +42,35 @@ function calculate_vectors(sides, radius, heigh) {
 
     // Add axis to array for the file
     // Bottom face
-    v.push(`v ${x} ${y} ${(-z).toFixed(4).padStart(8)}\n`);
+    v.push(`v ${x} ${y} ${(-z).toFixed(4).padStart(8)} \n`);
     // Top face
-    v.push(`v ${x} ${y} ${z.toFixed(4).padStart(8)}\n`);
+    v.push(`v ${x} ${y} ${z.toFixed(4).padStart(8)} \n`);
   }
 
-  create_file(sides, radius, heigh, v)
+  // Calculate bottom and top faces
+  const f = [];
+  for (let index = 3; index < (sides * 2); index += 2) {
+    // Bottom Face
+    f.push(`f 1 ${(index + 2)} ${index} \n`);
+    // Top Face
+    f.push(`f 2 ${(index + 1)} ${(index + 3)} \n`);
+  }
+  // Last Bottom and Top Triangles
+  // Bottom Face
+  f.push(`f 1 3 ${(sides * 2) + +1} \n`);
+  // Top Face
+  f.push(`f 2 ${(sides * 2) + 2} 4\n`);
+
+  // Lateral faces
+  for (let vertex = 3; vertex < sides * 2; vertex += 2) {
+    f.push(`f ${vertex} ${vertex + 2} ${vertex + 1} \n`);
+    f.push(`f ${vertex + 3} ${vertex + 1} ${vertex + 2} \n`);
+  }
+
+  f.push(`f ${(sides * 2) + 1} 3 ${(sides * 2) + 2} \n`);
+  f.push(`f 4 ${(sides * 2) + 2} 3 \n`);
+
+  create_file(sides, radius, heigh, v, f)
 }
 
 function build_cylinder() {
@@ -70,7 +93,6 @@ function build_cylinder() {
     console.error("Invalid input for height. Please enter a number 0.1 or higher as the third argument.");
     process.exit(1);
   }
-
   const animation = ["   ", ".", "..", "..."];
   let i = 0;
 
@@ -83,7 +105,7 @@ function build_cylinder() {
     calculate_vectors(sides, radius, height); // Create file
     clearInterval(interval); // Stops animation
     // Over write with blanc spaces
-    process.stdout.write(`\r                                                                                                       `);
+    process.stdout.write(`\r                                                                              `);
     console.log("\rFile creation completed!"); // Message when complete
   }, 4500); // Time of animation
 }
