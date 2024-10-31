@@ -21,64 +21,59 @@ class TreeCell(Agent):
             model: standard model reference for agent.
         """
         super().__init__(pos, model)
-        self.condition = "Alive"  # Default starting state
+        self.pos = pos
+        self.condition = "Dead"  # Default starting state
         self._next_condition = None
 
-    def get_neighbor_states(self, offsets):
-        """
-        Given a list of offsets, return the states of neighbors at those relative positions.
-
-        Args:
-            offsets (list of tuples): List of (dx, dy) tuples indicating the relative positions to check.
-
-        Returns:
-            list: A list of "Alive" or "Dead" states of the neighbors in the specified positions.
-        """
-        x, y = self.pos
-        neighbor_states = []
-        grid_width = 50  # Assuming grid is 50x50
-        grid_height = 50
-
-        for dx, dy in offsets:
-            neighbor_x = x + dx
-            neighbor_y = y + dy
-
-            # Check if the neighbor position is within grid bounds
-            if 0 <= neighbor_x < grid_width and 0 <= neighbor_y < grid_height:
-                # Get the neighbor at this position
-                neighbor = self.model.grid.get_cell_list_contents([(neighbor_x, neighbor_y)])
-                if neighbor:
-                    neighbor_states.append(neighbor[0].condition)
-                else:
-                    neighbor_states.append("Dead")
-            else:
-                # If the neighbor is out of bounds, assume it's "Dead"
-                neighbor_states.append("Dead")
-
-        return neighbor_states
-
     def step(self):
-        # Example of using get_neighbor_states to get specific neighbors
-        offsets = [(-1, +1), (0, +1), (1, +1)]  # Arriba a la izquierda, arriba, arriba a la derecha
-        neighbor_states = self.get_neighbor_states(offsets)
-        print("Pos: ", self.pos, "State: ",neighbor_states)
-        # Define a binary string based on neighbor states ("1" for Alive, "0" for Dead)
-        neighbor_pattern = "".join(["1" if state == "Alive" else "0" for state in neighbor_states])
+        """
+        Determine the agent's condition based on the condition of the neighbor above.
+        If the neighbor above is "Dead", set the agent's condition to "Dead".
+        Otherwise, set it to "Alive".
+        """
+        # Obtener la posición del vecino de arriba
+        x, y = self.pos
+        grid_height = self.model.grid.height
 
-        # Define the rule pattern
-        pattern_rules = {
-            "111": "Dead",
-            "110": "Alive",
-            "101": "Dead",
-            "100": "Alive",
-            "011": "Alive",
-            "010": "Dead",
-            "001": "Alive",
-            "000": "Dead"
-        }
+        if(y != grid_height-1):
+            top_left_neighbor_pos = (x - 1, y + 1)  # Vecino de arriba en la posición (x-1, y+1)
+            top_neighbor_pos = (x, y + 1)  # Vecino de arriba en la posición (x, y+1)
+            top_right_neighbor_pos = (x + 1, y + 1)  # Vecino de arriba en la posición (x, y+1)
 
-        # Determine the next condition based on the pattern
-        self._next_condition = pattern_rules.get(neighbor_pattern)
+            # Verificar si el vecino está dentro de los límites del grid
+            grid_width = self.model.grid.width
+
+            def get_neighbor_condition(pos):
+                if 0 <= pos[0] < grid_width and 0 <= pos[1] < grid_height:
+                    neighbor = self.model.grid.get_cell_list_contents([pos])
+                    if neighbor:
+                        return neighbor[0].condition
+                    else:
+                        return "Dead"
+                else:
+                    return "Dead"
+
+            top_left_condition = get_neighbor_condition(top_left_neighbor_pos)
+            top_condition = get_neighbor_condition(top_neighbor_pos)
+            top_right_condition = get_neighbor_condition(top_right_neighbor_pos)
+
+            if top_left_condition == "Alive" and top_condition == "Alive" and top_right_condition == "Alive":
+                self._next_condition = "Dead"  # 111 -> 0
+            elif top_left_condition == "Alive" and top_condition == "Alive" and top_right_condition == "Dead":
+                self._next_condition = "Alive"  # 110 -> 1
+            elif top_left_condition == "Alive" and top_condition == "Dead" and top_right_condition == "Alive":
+                self._next_condition = "Dead"  # 101 -> 0
+            elif top_left_condition == "Alive" and top_condition == "Dead" and top_right_condition == "Dead":
+                self._next_condition = "Alive"  # 100 -> 1
+            elif top_left_condition == "Dead" and top_condition == "Alive" and top_right_condition == "Alive":
+                self._next_condition = "Alive"  # 011 -> 1
+            elif top_left_condition == "Dead" and top_condition == "Alive" and top_right_condition == "Dead":
+                self._next_condition = "Dead"  # 010 -> 0
+            elif top_left_condition == "Dead" and top_condition == "Dead" and top_right_condition == "Alive":
+                self._next_condition = "Alive"  # 001 -> 1
+            elif top_left_condition == "Dead" and top_condition == "Dead" and top_right_condition == "Dead":
+                self._next_condition = "Dead"  # 000 -> 0
+
 
     def advance(self):
         """

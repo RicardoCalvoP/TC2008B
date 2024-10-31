@@ -5,20 +5,22 @@ from mesa.visualization import Slider
 from model import CellularAutomaton
 
 # The colors of the portrayal will depend on the agents's condition.
-COLORS = {"Alive": "#FFFFFF", "Dead": "#000000"}
+COLORS = {"Dead": "#ffffff", "Alive": "#000000"}
 
 # The portrayal is a dictionary that is used by the visualization server to
 # generate a visualization of the given agent.
 def forest_fire_portrayal(tree):
-    if tree is None:
-        return
     portrayal = {"Shape": "rect", "w": 1, "h": 1, "Filled": "true", "Layer": 0}
-    (x, y) = tree.pos
-    portrayal["x"] = x
-    portrayal["y"] = y
-    portrayal["Color"] = COLORS[tree.condition]
-
+    if tree is None:
+        # Representar celdas vacías con un color neutro
+        portrayal["Color"] = "#E1C699"  # Blanco para celdas sin agente
+    else:
+        (x, y) = tree.pos
+        portrayal["x"] = x
+        portrayal["y"] = y
+        portrayal["Color"] = COLORS[tree.condition]
     return portrayal
+
 
 # The canvas element will be 500x500 pixels, with each cell being 5x5 pixels.
 # The portrayal method will fill each cell with a representation of the tree
@@ -39,7 +41,7 @@ pie_chart = PieChartModule(
 model_params = {
     "height": 50,
     "width": 50,
-    "density": Slider("Tree density", 0.65, 0.01, 1.0, 0.01),
+    "density": Slider("Tree density", 1, 0.01, 1.0, 0.01),
 }
 
 # The modular server is a special visualization server that allows multiple

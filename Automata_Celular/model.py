@@ -20,7 +20,7 @@ class CellularAutomaton(Model):
 
         for contents, (x, y) in self.grid.coord_iter():
             if self.random.random() < density:
-        # Create a afent
+        # Create a agent
                 new_tree = TreeCell((x, y), self)
 
         # Set all agents in the first line alive or dead in random order .
