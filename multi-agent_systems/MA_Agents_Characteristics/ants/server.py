@@ -27,13 +27,14 @@ def log_norm(value, lower, upper):
     value_log = math.log(value)
     return (value_log - lower_log) / (upper_log - lower_log)
 
+
 def diffusion_portrayal(agent):
     if agent is None:
         return
 
     portrayal = {}
     if type(agent) is Ant:
-        portrayal["Shape"] = "resources/ant.png"
+        portrayal["Shape"] = "./resources/ant.png"
         portrayal["scale"] = 0.9
         portrayal["Layer"] = 1
     elif type(agent) is Food:
@@ -60,13 +61,15 @@ def diffusion_portrayal(agent):
         portrayal["h"] = 1
 
         # Calculate the amount of red we want
-        red = int(log_norm(agent.amount, agent.model.lowerbound, agent.model.initdrop) * 255)
+        red = int(log_norm(agent.amount, agent.model.lowerbound,
+                  agent.model.initdrop) * 255)
 
         # Scale this between red and white
         # cite https://stackoverflow.com/questions/3380726/converting-a-rgb-color-tuple-to-a-six-digit-code-in-python
         portrayal["Color"] = '#FF%02x%02x' % (255 - red, 255 - red)
 
     return portrayal
+
 
 # Make a world that is 50x50, on a 500x500 display.
 canvas_element = CanvasGrid(diffusion_portrayal, 50, 50, 500, 500)
