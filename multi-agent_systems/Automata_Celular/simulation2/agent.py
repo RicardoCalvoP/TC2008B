@@ -17,7 +17,10 @@ class TreeCell(Agent):
         grid_width = self.model.grid.width
         grid_height = self.model.grid.height
 
-        # Calcular las posiciones de los vecinos usando aritmética modular
+        """ Calcular las posiciones de los vecinos usando aritmética modular
+            para poder conocer las casillas de los lados espejos y que de esta
+            manera el Torus funcione como se espera
+        """
         top_left_neighbor_pos = ((x - 1) % grid_width, (y + 1) % grid_height)
         top_neighbor_pos = (x % grid_width, (y + 1) % grid_height)
         top_right_neighbor_pos = ((x + 1) % grid_width, (y + 1) % grid_height)

@@ -10,6 +10,7 @@ from agent import TreeCell
 class CellularAutomaton(Model):
     def __init__(self, height=50, width=50, density=0.65):
         self.schedule = SimultaneousActivation(self)
+        # Acitvamos Torus para que no haya limitaciones en el grid
         self.grid = SingleGrid(width, height, torus=True)
 
         self.datacollector = DataCollector(
