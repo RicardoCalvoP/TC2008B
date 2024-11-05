@@ -33,16 +33,16 @@ def agent_portrayal(agent):
     elif isinstance(agent, DirtAgent):
         portrayal["Shape"] = "rect"
         portrayal["Filled"] = "true"
-        portrayal["w"] = 0.75
-        portrayal["h"] = 0.75
+        portrayal["w"] = 0.5
+        portrayal["h"] = 0.5
         portrayal["Layer"] = 2
-        portrayal["Color"] = ["#3d251e"]
+        portrayal["Color"] = ["#3d221e"]
 
     return portrayal
 
 
-model_params = {"N": 5, "width": 10, "height": 10}
-grid = CanvasGrid(agent_portrayal, 10, 10, 500, 500)
+model_params = {"N": 5, "width": 25, "height": 25}
+grid = CanvasGrid(agent_portrayal, 25, 25, 500, 500)
 
 bar_chart = BarChartModule([{"Label": "Steps", "Color": "#AA0000"}],
                            scope="agent", sorting="ascending", sort_by="Steps")

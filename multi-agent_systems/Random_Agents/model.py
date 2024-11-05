@@ -16,22 +16,18 @@ class RandomModel(Model):
         self.running = True
 
         # Inicializar el recolector de datos
-        self.datacollector = DataCollector(agent_reporters={
-                                           "Steps": lambda a: a.steps_taken if isinstance(a, RandomAgent) else 0})
-
-        # Generador de posiciones aleatorias
-        def pos_gen(w, h): return (
-            self.random.randrange(w), self.random.randrange(h))
-
+        self.datacollector = DataCollector(
+            agent_reporters={"Steps": lambda a: a.steps_taken if isinstance(a, RandomAgent) else 0})
         # Crear agentes ObstacleAgent en posiciones aleatorias
-        for i in range(self.num_agents):
-            obs = ObstacleAgent(i + 2000, self)
-            pos = pos_gen(self.grid.width, self.grid.height)
+        border = [(x,y) for y in range(height) for x in range(width) if y in [0, height-1] or x in [0, width - 1]]
 
-            while not self.grid.is_cell_empty(pos):
-                pos = pos_gen(self.grid.width, self.grid.height)
-
+        # Add obstacles to the grid
+        for pos in border:
+            obs = ObstacleAgent(pos, self)
             self.grid.place_agent(obs, pos)
+
+        # Function to generate random positions
+        pos_gen = lambda w, h: (self.random.randrange(w), self.random.randrange(h))
 
         # Crear agentes DirtAgemt en posiciones aleatorias
         for i in range(self.num_agents):
