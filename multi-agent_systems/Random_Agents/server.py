@@ -27,6 +27,10 @@ def agent_portrayal(agent):
         portrayal["Color"] = "red"
         portrayal["r"] = "1"
         portrayal["Layer"] = 3
+        portrayal["text"] = agent.battery
+        portrayal["text_color"] = "White"
+
+
 
     # Representación del agente ChargingStationAgent
     elif isinstance(agent, ChargingStationAgent):
@@ -59,7 +63,7 @@ def agent_portrayal(agent):
 model_params = {
     "width": 25,
     "height": 25,
-    "number_of_roombas": Slider("Number of Roombas", 5, 1, 10, 1),
+    "number_of_roombas": Slider("Number of Roombas", 1, 1, 10, 1),
     "number_of_dirty_floors": Slider("Number of dirty floors", 10, 1, 50, 1),
     "number_of_obstacles": Slider("number of obstacles", 10, 1, 50, 1),
 }

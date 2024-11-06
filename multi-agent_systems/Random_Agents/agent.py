@@ -21,8 +21,17 @@ class RoombaAgent(Agent):
         self.condition = "Cleaning"
         self.direction = 4
         self.steps_taken = 0
+        self.battery  = 100
 
-    def move(self):
+    def step(self):
+        """
+        hierarchy
+
+        - Return home if battery low
+        - Clean
+        - Move
+        """
+
         # Obtener las posiciones vecinas
         possible_steps = self.model.grid.get_neighborhood(
             self.pos,
@@ -44,15 +53,24 @@ class RoombaAgent(Agent):
                 neighbor_info[agent_type].append(pos)
 
         # Ejemplo de movimiento: moverse a una posición con FloorAgent si está disponible
+        next_move=(0,0)
         if FloorAgent in neighbor_info:
             next_move = self.random.choice(neighbor_info[FloorAgent])
+            print("next move", next_move)
         else:
             # Si no hay FloorAgent en los vecinos, elegir una dirección aleatoria
             next_move = self.random.choice(possible_steps)
+            print("next move", next_move)
+        current_cell = self.model.grid.get_cell_list_contents(next_move)
+
+        # Clean if cell is dirty
+        if current_cell[0].condition == "Dirty":
+            current_cell[0].condition = "Clean"
 
         # Realizar el movimiento con probabilidad del 10%
         self.model.grid.move_agent(self, next_move)
         self.steps_taken += 1
+        self.battery -=1
 
 
 class ObstacleAgent(Agent):
