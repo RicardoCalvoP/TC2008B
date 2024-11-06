@@ -113,9 +113,9 @@ function drawScene(gl, vao, programInfo, bufferInfo) {
   const traMat = m3.translation(translate);
   // Create a composite matrix
   let transforms = m3.identity();
-  transforms = m3.multiply(traMat, transforms);
   transforms = m3.multiply(scaMat, transforms);
   transforms = m3.multiply(rotMat, transforms);
+  transforms = m3.multiply(traMat, transforms);
 
   let uniforms =
   {
