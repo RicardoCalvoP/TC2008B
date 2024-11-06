@@ -9,7 +9,9 @@ from mesa.visualization import Slider
 COLORS = {"Clean": "#ffffff", "Dirty": "#3d221e",
           "Free": "#00ffff", "Busy": "#770000"}
 
-IMAGES = {"Clean": "rect", "Dirty": "./Resources/Poop_Emoji.png"}
+IMAGES = {"Clean": "rect", "Dirty": "./Resources/Poop_Emoji.png",
+          "Free": "./Resources/realistic_charging_station_free.png", "Busy": "./Resources/realistic_charging_station_busy.png",
+          "Cleaning": "./Resources/Roomba.png", "Charging": "./Resources/realistic_charging_station_busy.png"}
 
 
 def agent_portrayal(agent):
@@ -20,7 +22,7 @@ def agent_portrayal(agent):
 
     # Representación del agente Roomba
     if isinstance(agent, RoombaAgent):
-        portrayal["Shape"] = "./Resources/Roomba.png"
+        portrayal["Shape"] = IMAGES[agent.condition]
         portrayal["Filled"] = "true"
         portrayal["Color"] = "red"
         portrayal["r"] = "1"
@@ -28,10 +30,8 @@ def agent_portrayal(agent):
 
     # Representación del agente ChargingStationAgent
     elif isinstance(agent, ChargingStationAgent):
-        portrayal["Shape"] = "rect"
+        portrayal["Shape"] = IMAGES[agent.condition]
         portrayal["Filled"] = "true"
-        portrayal["w"] = 1
-        portrayal["h"] = 1
         portrayal["Layer"] = 1
         portrayal["Color"] = COLORS[agent.condition]
 

@@ -17,6 +17,8 @@ class RoombaAgent(Agent):
             model: Model reference for the agent
         """
         super().__init__(unique_id, model)
+        # Condition Cleaning | Charging
+        self.condition = "Cleaning"
         self.direction = 4
         self.steps_taken = 0
 
@@ -72,6 +74,7 @@ class FloorAgent(Agent):
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
+        # Condition Clean | Dirty
         self.condition = "Clean"
         self._next_condition = None
 
@@ -86,6 +89,7 @@ class ChargingStationAgent(Agent):
 
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
+        # Condition Free | Busy
         self.condition = "Free"
         self._next_condition = None
 
