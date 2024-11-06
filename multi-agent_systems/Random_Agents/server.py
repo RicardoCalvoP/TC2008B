@@ -1,7 +1,15 @@
 # server.py
-from model import RandomModel, ObstacleAgent, RandomAgent, DirtAgent
+from model import RandomModel, ObstacleAgent, RoombaAgent, FloorAgent, ChargingStationAgent
 from mesa.visualization import CanvasGrid, BarChartModule
 from mesa.visualization import ModularServer
+from mesa.visualization import Slider
+
+
+# The colors of the portrayal will depend on the floor agents's condition.
+COLORS = {"Clean": "#ffffff", "Dirty": "#3d221e",
+          "Free": "#00ffff", "Busy": "#770000"}
+
+IMAGES = {"Clean": "rect", "Dirty": "./Resources/Poop_Emoji.png"}
 
 
 def agent_portrayal(agent):
@@ -11,14 +19,21 @@ def agent_portrayal(agent):
     portrayal = {}
 
     # Representación del agente Roomba
-    if isinstance(agent, RandomAgent):
-        portrayal["Shape"] = "circle"
+    if isinstance(agent, RoombaAgent):
+        portrayal["Shape"] = "./Resources/Roomba.png"
         portrayal["Filled"] = "true"
         portrayal["Color"] = "red"
-        portrayal["r"] = "0.5"
+        portrayal["r"] = "1"
         portrayal["Layer"] = 3
-        portrayal["text"] = f"Steps: {agent.steps_taken}"
-        portrayal["text_color"] = "Black"
+
+    # Representación del agente ChargingStationAgent
+    elif isinstance(agent, ChargingStationAgent):
+        portrayal["Shape"] = "rect"
+        portrayal["Filled"] = "true"
+        portrayal["w"] = 1
+        portrayal["h"] = 1
+        portrayal["Layer"] = 1
+        portrayal["Color"] = COLORS[agent.condition]
 
     # Representación del agente ObstacleAgent
     elif isinstance(agent, ObstacleAgent):
@@ -30,18 +45,24 @@ def agent_portrayal(agent):
         portrayal["Color"] = ["#000000"]
 
     # Representación del agente basura
-    elif isinstance(agent, DirtAgent):
-        portrayal["Shape"] = "rect"
+    elif isinstance(agent, FloorAgent):
+        portrayal["Shape"] = IMAGES[agent.condition]
         portrayal["Filled"] = "true"
         portrayal["w"] = 0.5
         portrayal["h"] = 0.5
         portrayal["Layer"] = 2
-        portrayal["Color"] = ["#3d221e"]
+        portrayal["Color"] = COLORS[agent.condition]
 
     return portrayal
 
 
-model_params = {"N": 5, "width": 25, "height": 25}
+model_params = {
+    "width": 25,
+    "height": 25,
+    "number_of_roombas": Slider("Number of Roombas", 5, 1, 10, 1),
+    "number_of_dirty_floors": Slider("Number of dirty floors", 10, 1, 50, 1),
+    "number_of_obstacles": Slider("number of obstacles", 10, 1, 50, 1),
+}
 grid = CanvasGrid(agent_portrayal, 25, 25, 500, 500)
 
 bar_chart = BarChartModule([{"Label": "Steps", "Color": "#AA0000"}],
