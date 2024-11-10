@@ -22,6 +22,7 @@ class RoombaAgent(Agent):
         self.condition = "Cleaning"
         self.direction = 4
         self.steps_taken = 0
+        self.floors_cleaned = 0
         self.battery = 100
         self.charging_station = charging_station
         self.visited_cells = set([self.charging_station])
@@ -172,6 +173,7 @@ class RoombaAgent(Agent):
                 # Restar batería si la celda estaba sucia
                 if agent.condition == "Dirty":
                     self.battery -= 1
+                    self.floors_cleaned += 1
                 # Marcar como "Clean" si llegamos directamente a ella
                 agent.condition = "Clean"
 
@@ -203,7 +205,6 @@ class FloorAgent(Agent):
         super().__init__(unique_id, model)
         # Condition Clean | Dirty
         self.condition = "Unvisited"
-        self._next_condition = None
 
     def step(self):
         pass

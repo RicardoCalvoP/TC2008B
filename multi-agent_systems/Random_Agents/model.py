@@ -18,9 +18,15 @@ class RandomModel(Model):
         self.datacollector = DataCollector(
             agent_reporters={
                 "Steps": lambda a: a.steps_taken if isinstance(a, RoombaAgent) else 0,
-                "Clean": lambda f: f.condition if isinstance(f, FloorAgent) else 0,
-                "Dirty": lambda f: f.condition if isinstance(f, FloorAgent) else 0,
-            })
+                "Cleaned": lambda a: a.floors_cleaned if isinstance(a, RoombaAgent) else 0,
+            },
+            model_reporters={
+                "Clean": lambda m: self.count_type(m, "Clean"),
+                "Dirty": lambda m: self.count_type(m, "Dirty"),
+                "Unvisited": lambda m: self.count_type(m, "Unvisited"),
+                "Visited": lambda m: self.count_type(m, "Visited"),
+            },
+        )
         # Crear agentes ObstacleAgent en posiciones aleatorias
         border = [(x, y) for y in range(height) for x in range(
             width) if y in [0, height-1] or x in [0, width - 1]]
@@ -66,12 +72,14 @@ class RandomModel(Model):
         for i in range(number_of_dirty_floors):
             floor = FloorAgent(i + 1000, self)
             floor.condition = "Dirty"
+            floor.num_dirty_floors = 1
             pos = pos_gen(self.grid.width, self.grid.height)
 
             while not self.grid.is_cell_empty(pos):
                 pos = pos_gen(self.grid.width, self.grid.height)
 
             self.grid.place_agent(floor, pos)
+            self.schedule.add(floor)
 
         # ----------------------------------------------------------
         # Create Obstacles
@@ -93,9 +101,21 @@ class RandomModel(Model):
             floor = FloorAgent(new_pos, self)
             if self.grid.is_cell_empty(new_pos):
                 self.grid.place_agent(floor, new_pos)
+                self.schedule.add(floor)
 
         self.datacollector.collect(self)
 
     def step(self):
         self.schedule.step()
         self.datacollector.collect(self)
+
+    @staticmethod
+    def count_type(model, floor_condition):
+        """
+        Helper method to count trees in a given condition in a given model.
+        """
+        count = 0
+        for floor in model.schedule.agents:
+            if floor.condition == floor_condition:
+                count += 1
+        return count

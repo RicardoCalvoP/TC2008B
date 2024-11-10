@@ -1,12 +1,13 @@
 # server.py
+from mesa.visualization.modules import PieChartModule
 from model import RandomModel, ObstacleAgent, RoombaAgent, FloorAgent, ChargingStationAgent
-from mesa.visualization import CanvasGrid, BarChartModule
+from mesa.visualization import CanvasGrid, BarChartModule, PieChartModule
 from mesa.visualization import ModularServer
 from mesa.visualization import Slider
 
 
 # The colors of the portrayal will depend on the floor agents's condition.
-COLORS = {"Clean": "#ffffff", "Unvisited": "#808080", "Visited": "#F5F5DC", "Dirty": "#3d221e",
+COLORS = {"Clean": "#ffffff", "Unvisited": "#808080", "Visited": "#F5F5DC", "Dirty": "#4b3621",
           "Free": "#00ffff", "Busy": "#770000"}
 
 IMAGES = {"Clean": "rect", "Unvisited": "rect", "Visited": "rect", "Dirty": "./Resources/Poop_Emoji.png",
@@ -67,10 +68,20 @@ model_params = {
 }
 grid = CanvasGrid(agent_portrayal, 20, 20, 750, 750)
 
-bar_chart = BarChartModule([{"Label": "Steps", "Color": "#AA0000"}],
-                           scope="agent", sorting="ascending", sort_by="Steps")
+bar_chart_steps = BarChartModule([{"Label": "Steps", "Color": "#AA0000"}],
+                                 scope="agent", sorting="ascending", sort_by="Steps")
+
+bar_chart_cleaned = BarChartModule([{"Label": "Cleaned", "Color": "#00FF00"}],
+                                   scope="agent", sorting="ascending", sort_by="Cleaned")
+
+
+# Configurar el gráfico de pastel
+pie_chart_floors = PieChartModule(
+    [{"Label": label, "Color": color} for label, color in COLORS.items()]
+)
+
 
 server = ModularServer(
-    RandomModel, [grid, bar_chart], "Random Agents", model_params)
+    RandomModel, [grid, pie_chart_floors, bar_chart_cleaned, bar_chart_steps], "Random Agents", model_params)
 server.port = 8521
 server.launch()
