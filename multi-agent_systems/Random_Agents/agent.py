@@ -1,4 +1,5 @@
 from mesa import Agent
+import math
 
 
 class RoombaAgent(Agent):
@@ -9,7 +10,7 @@ class RoombaAgent(Agent):
         direction: Randomly chosen direction chosen from one of eight directions
     """
 
-    def __init__(self, unique_id, model):
+    def __init__(self, unique_id, model, charging_station):
         """
         Creates a new random agent.
         Args:
@@ -21,7 +22,10 @@ class RoombaAgent(Agent):
         self.condition = "Cleaning"
         self.direction = 4
         self.steps_taken = 0
-        self.battery  = 100
+        self.battery = 100
+        self.charging_station = charging_station
+        self.visited_cells = set([self.charging_station])
+        self.path_to_station = []  # Lista para registrar el camino de regreso
 
     def step(self):
         """
@@ -32,45 +36,150 @@ class RoombaAgent(Agent):
         - Move
         """
 
+        if self.pos == self.charging_station and self.steps_taken > 0:
+            # Recargar batería hasta el máximo
+            self.condition = "Charging"
+            print("El Roomba está cargando...", self.battery, "%")
+            self.battery = min(self.battery + 5, 100)
+            if (self.battery == 100):
+                self.condition = "Cleaning"
+                self.clean()
+        else:
+            min_dist = self.get_distance(self.pos, self.charging_station)
+            if (self.battery <= min_dist+2):
+                self.return_to_station()
+            elif (self.condition == "Cleaning"):
+                self.clean()
+
+    def get_distance(self, pos_1, pos_2):
+        x1, y1 = pos_1
+        x2, y2 = pos_2
+
+        return abs(x1 - x2) + abs(y1 - y2)
+
+    def update_path_to_station(self):
+        """
+        Recalcula el camino más eficiente desde la posición actual hasta la estación de carga,
+        considerando únicamente las celdas marcadas como "Clean" y la estación de carga.
+        """
+        from collections import deque
+
+        queue = deque([[self.pos]])
+        visited = set()
+        visited.add(self.pos)
+
+        while queue:
+            path = queue.popleft()
+            current_pos = path[-1]
+
+            # Si llegamos a la estación, guardar el camino
+            if current_pos == self.charging_station:
+                self.path_to_station = path  # Actualizar el camino
+                return
+
+            # Explorar vecinos accesibles que estén en "Clean" o sean la estación de carga
+            neighbors = self.model.grid.get_neighborhood(
+                current_pos, moore=True, include_center=False
+            )
+
+            for neighbor in neighbors:
+                if neighbor not in visited:
+                    agents_in_cell = self.model.grid.get_cell_list_contents(
+                        neighbor)
+
+                    # Verificar si el vecino es una celda "Clean" o la estación de carga
+                    if any(isinstance(agent, FloorAgent) and agent.condition == "Clean" for agent in agents_in_cell) or \
+                            any(isinstance(agent, ChargingStationAgent) for agent in agents_in_cell):
+                        visited.add(neighbor)
+                        queue.append(path + [neighbor])
+
+    def return_to_station(self):
+
+        # Sigue el camino en path_to_station para regresar a la estación de carga.
+
+        # Tomar el siguiente paso en el camino
+        next_move = self.path_to_station.pop(0)
+        self.model.grid.move_agent(self, next_move)
+        self.steps_taken += 1
+        self.battery -= 1
+
+        # Verificar si llegamos a la estación
+        if next_move == self.charging_station:
+            print("Roomba ha llegado a la estación de carga.")
+
+    def clean(self):
+        # Registrar la celda actual como visitada y marcarla como "Clean"
+        self.visited_cells.add(self.pos)
+
         # Obtener las posiciones vecinas
         possible_steps = self.model.grid.get_neighborhood(
             self.pos,
-            moore=True,     # Incluir las diagonales
+            moore=True,  # Incluir diagonales
             include_center=False  # Excluir la posición actual
         )
 
-        # Diccionario para almacenar las posiciones y tipos de agentes descubiertos
-        neighbor_info = {}
+        # Filtrar vecinos para clasificar las celdas en prioridades
+        accessible_steps = []
+        dirty_steps = []
+        visited_steps = []
+        to_visit_steps = []
 
-        # Explorar vecinos y clasificar agentes en las posiciones vecinas
         for pos in possible_steps:
-            agents = self.model.grid.get_cell_list_contents(pos)
-            for agent in agents:
-                agent_type = type(agent)
-                # Guarda la posición y tipo de agente si es FloorAgent o cualquier otro agente relevante
-                if agent_type not in neighbor_info:
-                    neighbor_info[agent_type] = []
-                neighbor_info[agent_type].append(pos)
+            # Obtener agentes en la celda
+            agents_in_cell = self.model.grid.get_cell_list_contents(pos)
 
-        # Ejemplo de movimiento: moverse a una posición con FloorAgent si está disponible
-        next_move=(0,0)
-        if FloorAgent in neighbor_info:
-            next_move = self.random.choice(neighbor_info[FloorAgent])
-            print("next move", next_move)
+            # Ignorar celdas con obstáculos
+            if any(isinstance(agent, ObstacleAgent) for agent in agents_in_cell):
+                continue
+
+            for agent in agents_in_cell:
+                if isinstance(agent, FloorAgent):
+                    # Si la celda está sucia
+                    if agent.condition == "Dirty":
+                        dirty_steps.append(pos)
+                    # Si ya hemos estado directamente en la celda
+                    elif agent.condition == "Clean":
+                        visited_steps.append(pos)
+                    # Si conocemos la celda pero no hemos estado en ella
+                    elif agent.condition == "Visited":
+                        to_visit_steps.append(pos)
+                    else:
+                        # Si no tiene un estado previo, marcar como "Visited"
+                        agent.condition = "Visited"
+                        to_visit_steps.append(pos)
+
+                    # Agregar a la lista general de accesibles
+                    accessible_steps.append(pos)
+
+        # Priorización de movimiento: Dirty > To Visit > Visited
+        if dirty_steps:
+            next_move = self.random.choice(dirty_steps)
+        elif to_visit_steps:
+            next_move = self.random.choice(to_visit_steps)
+        elif visited_steps:
+            next_move = self.random.choice(visited_steps)
         else:
-            # Si no hay FloorAgent en los vecinos, elegir una dirección aleatoria
-            next_move = self.random.choice(possible_steps)
-            print("next move", next_move)
+            # Este caso no debería suceder porque siempre hay posibles pasos accesibles
+            print("No hay movimientos disponibles.")
+            return
+
+        # Obtener agentes en la celda seleccionada
         current_cell = self.model.grid.get_cell_list_contents(next_move)
 
-        # Clean if cell is dirty
-        if current_cell[0].condition == "Dirty":
-            current_cell[0].condition = "Clean"
+        # Cambiar condición de las celdas seleccionadas
+        for agent in current_cell:
+            if isinstance(agent, FloorAgent):
+                # Restar batería si la celda estaba sucia
+                if agent.condition == "Dirty":
+                    self.battery -= 1
+                # Marcar como "Clean" si llegamos directamente a ella
+                agent.condition = "Clean"
 
-        # Realizar el movimiento con probabilidad del 10%
+        # Realizar el movimiento
         self.model.grid.move_agent(self, next_move)
+        self.update_path_to_station()
         self.steps_taken += 1
-        self.battery -=1
+        self.battery -= 1
 
 
 class ObstacleAgent(Agent):
@@ -93,7 +202,7 @@ class FloorAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         # Condition Clean | Dirty
-        self.condition = "Clean"
+        self.condition = "Unvisited"
         self._next_condition = None
 
     def step(self):

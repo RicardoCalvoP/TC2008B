@@ -44,14 +44,19 @@ class RandomModel(Model):
         # Create Roombas and charging stations in randoms positions
         # ----------------------------------------------------------
         for i in range(number_of_roombas):
-            roomba = RoombaAgent(i, self)
+
+            # Position if number of roombas is 1
+            pos = (1, height-2)
+
+            # Generate positions if there is more than 1 roomba
+            if (number_of_roombas != 1):
+                pos = pos_gen(self.grid.width, self.grid.height)
+                while not self.grid.is_cell_empty(pos):
+                    pos = pos_gen(self.grid.width, self.grid.height)
+
+            roomba = RoombaAgent(i, self, pos)
             chargingStation = ChargingStationAgent(i+number_of_roombas, self)
             self.schedule.add(roomba)
-
-            pos = pos_gen(self.grid.width, self.grid.height)
-            while not self.grid.is_cell_empty(pos):
-                pos = pos_gen(self.grid.width, self.grid.height)
-
             self.grid.place_agent(roomba, pos)
             self.grid.place_agent(chargingStation, pos)
 
