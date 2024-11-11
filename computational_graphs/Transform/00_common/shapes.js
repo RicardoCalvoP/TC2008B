@@ -145,6 +145,7 @@ function cubeFaceColors(size) {
     return arrays;
 }
 
+
 // Create the data for a cube with each vertex in a different color
 function cubeVertexColors(size) {
     let arrays =
@@ -205,5 +206,115 @@ function cubeVertexColors(size) {
     return arrays;
 }
 
+function eightSidedWheel(size) {
+    let arrays =
+    {
+        a_position: {
+            numComponents: 3,
+            data: [
+                0, 0, 0,
+                // Front Face
+                0, 0, -0.5000,
+                0, 0, 0.5000,
+                5.0000, 0.0000, -0.5000,
+                5.0000, 0.0000, 0.5000,
+                3.5355, 3.5355, -0.5000,
+                3.5355, 3.5355, 0.5000,
+                0.0000, 5.0000, -0.5000,
+                0.0000, 5.0000, 0.5000,
+                - 3.5355, 3.5355, -0.5000,
+                - 3.5355, 3.5355, 0.5000,
+                - 5.0000, 0.0000, -0.5000,
+                - 5.0000, 0.0000, 0.5000,
+                - 3.5355, -3.5355, -0.5000,
+                - 3.5355, -3.5355, 0.5000,
+                - 0.0000, -5.0000, -0.5000,
+                - 0.0000, -5.0000, 0.5000,
+                3.5355, -3.5355, -0.5000,
+                3.5355, -3.5355, 0.5000
 
-export { shapeF, cubeFaceColors, cubeVertexColors };
+
+            ].map(e => size * e)
+        },
+        a_color: {
+            numComponents: 4,
+            data: [
+                // Front face
+                1, 0, 0, 1, // v_1
+                1, 0, 0, 1, // v_1
+                1, 0, 0, 1, // v_1
+                1, 0, 0, 1, // v_1
+                // Back Face
+                0, 1, 0, 1, // v_2
+                0, 1, 0, 1, // v_2
+                0, 1, 0, 1, // v_2
+                0, 1, 0, 1, // v_2
+                // Top Face
+                0, 0, 1, 1, // v_3
+                0, 0, 1, 1, // v_3
+                0, 0, 1, 1, // v_3
+                0, 0, 1, 1, // v_3
+                // Bottom Face
+                1, 1, 0, 1, // v_4
+                1, 1, 0, 1, // v_4
+                1, 1, 0, 1, // v_4
+                1, 1, 0, 1, // v_4
+                // Right Face
+                0, 1, 1, 1, // v_5
+                0, 1, 1, 1, // v_5
+                0, 1, 1, 1, // v_5
+                0, 1, 1, 1, // v_5
+                // Left Face
+                1, 0, 1, 1, // v_6
+                1, 0, 1, 1, // v_6
+                1, 0, 1, 1, // v_6
+                1, 0, 1, 1, // v_6
+            ]
+        },
+        indices: {
+            numComponents: 3,
+            data: [
+                1, 5, 3,
+                2, 4, 6,
+                1, 7, 5,
+                2, 6, 8,
+                1, 9, 7,
+                2, 8, 10,
+                1, 11, 9,
+                2, 10, 12,
+                1, 13, 11,
+                2, 12, 14,
+                1, 15, 13,
+                2, 14, 16,
+                1, 17, 15,
+                2, 16, 18,
+                1, 3, 17,
+                2, 18, 4,
+                3, 5, 4,
+                6, 4, 5,
+                5, 7, 6,
+                8, 6, 7,
+                7, 9, 8,
+                10, 8, 9,
+                9, 11, 10,
+                12, 10, 11,
+                11, 13, 12,
+                14, 12, 13,
+                13, 15, 14,
+                16, 14, 15,
+                15, 17, 16,
+                18, 16, 17,
+                17, 3, 18,
+                4, 18, 3,
+
+            ]
+        }
+    };
+
+    // console.log("ATTRIBUTES:")
+    // console.log(arrays);
+
+    return arrays;
+}
+
+export { shapeF, cubeFaceColors, cubeVertexColors, eightSidedWheel };

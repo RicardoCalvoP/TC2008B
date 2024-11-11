@@ -95,6 +95,19 @@ function drawScene() {
 
     let translate = [objects.model.transforms.t.x, objects.model.transforms.t.y, objects.model.transforms.t.z];
     const traMat = m4.translation(translate);
+    // Rotation
+    let angles_radians_x = objects.model.transforms.rr.x;
+    let angles_radians_y = objects.model.transforms.rr.y;
+    let angles_radians_z = objects.model.transforms.rr.z;
+
+    const rotMatX = m4.rotationX(angles_radians_x);
+    const rotMatY = m4.rotationY(angles_radians_y);
+    const rotMatZ = m4.rotationZ(angles_radians_z);
+    // Scale
+    let scale = [objects.model.transforms.s.x, objects.model.transforms.s.y, objects.model.transforms.s.z];
+    const scaMat = m4.scale(scale);
+
+
 
 
     // Create the individual transform matrices
@@ -109,8 +122,12 @@ function drawScene() {
 
 
     // Apply the projection to the final matrix
-    transforms = m4.multiply(viewProjectionMatrix, transforms);
+    transforms = m4.multiply(scaMat, transforms);
+    transforms = m4.multiply(rotMatX, transforms);
+    transforms = m4.multiply(rotMatY, transforms);
+    transforms = m4.multiply(rotMatZ, transforms);
     transforms = m4.multiply(traMat, transforms);
+    transforms = m4.multiply(viewProjectionMatrix, transforms);
 
     console.log(transforms);
 
