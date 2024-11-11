@@ -21,10 +21,10 @@ class RandomModel(Model):
                 "Cleaned": lambda a: a.floors_cleaned if isinstance(a, RoombaAgent) else 0,
             },
             model_reporters={
-                "Clean": lambda m: self.count_type(m, "Clean"),
-                "Dirty": lambda m: self.count_type(m, "Dirty"),
-                "Unvisited": lambda m: self.count_type(m, "Unvisited"),
-                "Visited": lambda m: self.count_type(m, "Visited"),
+                "Clean": lambda m: m.count_type(m, "Clean"),
+                "Dirty": lambda m: m.count_type(m, "Dirty"),
+                "Unvisited": lambda m: m.count_type(m, "Unvisited"),
+                "Visited": lambda m: m.count_type(m, "Visited"),
             },
         )
         # Crear agentes ObstacleAgent en posiciones aleatorias
@@ -37,9 +37,10 @@ class RandomModel(Model):
 
         # Add obstacles to the grid
         for pos in border:
-            obs = ObstacleAgent(pos, self)
+            id_obstacle = 5000
+            obs = ObstacleAgent(id_obstacle, self)
             self.grid.place_agent(obs, pos)
-
+            id_obstacle += 1
         # ----------------------------------------------------------
         # Function to generate random positions
         # ----------------------------------------------------------
@@ -98,16 +99,23 @@ class RandomModel(Model):
         # ----------------------------------------------------------
 
         for new_pos in area:
-            floor = FloorAgent(new_pos, self)
+            floor_id = 3000
+            floor = FloorAgent(floor_id, self)
             if self.grid.is_cell_empty(new_pos):
                 self.grid.place_agent(floor, new_pos)
                 self.schedule.add(floor)
 
+            floor_id += 1
         self.datacollector.collect(self)
 
     def step(self):
         self.schedule.step()
         self.datacollector.collect(self)
+        model_data = self.datacollector.get_model_vars_dataframe()
+        dirty_floors = model_data["Dirty"].iloc[-1]  # Último registro
+        # Ejemplo: detener la simulación en el paso 100
+        if self.schedule.steps >= 600 or dirty_floors == 0:
+            self.running = False
 
     @staticmethod
     def count_type(model, floor_condition):

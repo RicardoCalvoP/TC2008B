@@ -28,7 +28,7 @@ def agent_portrayal(agent):
         portrayal["Color"] = "red"
         portrayal["r"] = "1"
         portrayal["Layer"] = 3
-        portrayal["text"] = agent.battery
+        portrayal["text"] = agent.battery, agent.floors_cleaned
         portrayal["text_color"] = "White"
 
     # Representación del agente ChargingStationAgent
@@ -77,7 +77,12 @@ bar_chart_cleaned = BarChartModule([{"Label": "Cleaned", "Color": "#00FF00"}],
 
 # Configurar el gráfico de pastel
 pie_chart_floors = PieChartModule(
-    [{"Label": label, "Color": color} for label, color in COLORS.items()]
+    [
+        {"Label": "Clean", "Color": COLORS["Clean"]},
+        {"Label": "Dirty", "Color": COLORS["Dirty"]},
+        {"Label": "Unvisited", "Color": COLORS["Unvisited"]},
+        {"Label": "Visited", "Color": COLORS["Visited"]},
+    ],
 )
 
 

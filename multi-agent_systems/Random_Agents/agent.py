@@ -19,10 +19,11 @@ class RoombaAgent(Agent):
         """
         super().__init__(unique_id, model)
         # Condition Cleaning | Charging
-        self.condition = "Cleaning"
-        self.direction = 4
+        self.agent_type = "Roomba"  # Identificador del tipo de agente
         self.steps_taken = 0
         self.floors_cleaned = 0
+        self.condition = "Cleaning"
+        self.direction = 4
         self.battery = 100
         self.charging_station = charging_station
         self.visited_cells = set([self.charging_station])
@@ -204,6 +205,7 @@ class FloorAgent(Agent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         # Condition Clean | Dirty
+        self.agent_type = "Floor"  # Identificador del tipo de agente
         self.condition = "Unvisited"
 
     def step(self):
