@@ -10,7 +10,7 @@ from mesa.visualization import Slider
 COLORS = {"Clean": "#ffffff", "Unvisited": "#808080", "Visited": "#F5F5DC", "Dirty": "#4b3621",
           "Free": "#00ffff", "Busy": "#770000"}
 
-IMAGES = {"Clean": "rect", "Unvisited": "rect", "Visited": "rect", "Dirty": "./Resources/Poop_Emoji.png",
+IMAGES = {"Clean": "rect", "Unvisited": "rect", "Visited": "rect", "Dirty": "./Resources/Poop_Emoji2.png",
           "Free": "./Resources/realistic_charging_station_free.png", "Busy": "./Resources/realistic_charging_station_busy.png",
           "Cleaning": "./Resources/Roomba.png",  "Charging": "./Resources/realistic_charging_station_busy.png"}
 
@@ -51,8 +51,8 @@ def agent_portrayal(agent):
     elif isinstance(agent, FloorAgent):
         portrayal["Shape"] = IMAGES[agent.condition]
         portrayal["Filled"] = "true"
-        portrayal["w"] = 0.95
-        portrayal["h"] = 0.95
+        portrayal["w"] = 0.9
+        portrayal["h"] = 0.9
         portrayal["Layer"] = 2
         portrayal["Color"] = COLORS[agent.condition]
 
