@@ -46,11 +46,9 @@ function shapeF() {
     return arrays;
 }
 
-
 // Create the data for a cube where each face has a different color
 function cubeFaceColors(size) {
-    let arrays =
-    {
+    let arrays = {
         a_position: {
             numComponents: 3,
             data: [
@@ -90,6 +88,46 @@ function cubeFaceColors(size) {
                 -1.0, 1.0, 1.0,
                 -1.0, 1.0, -1.0
             ].map(e => size * e)
+        },
+        a_normal: {
+            numComponents: 3,
+            data: [
+                // Front Face
+                0, 0, 1,
+                0, 0, 1,
+                0, 0, 1,
+                0, 0, 1,
+
+                // Back face
+                0, 0, -1,
+                0, 0, -1,
+                0, 0, -1,
+                0, 0, -1,
+
+                // Top face
+                0, 1, 0,
+                0, 1, 0,
+                0, 1, 0,
+                0, 1, 0,
+
+                // Bottom face
+                0, -1, 0,
+                0, -1, 0,
+                0, -1, 0,
+                0, -1, 0,
+
+                // Right face
+                1, 0, 0,
+                1, 0, 0,
+                1, 0, 0,
+                1, 0, 0,
+
+                // Left face
+                -1, 0, 0,
+                -1, 0, 0,
+                -1, 0, 0,
+                -1, 0, 0,
+            ]
         },
         a_color: {
             numComponents: 4,
@@ -138,9 +176,6 @@ function cubeFaceColors(size) {
             ]
         }
     };
-
-    // console.log("ATTRIBUTES:")
-    // console.log(arrays);
 
     return arrays;
 }
