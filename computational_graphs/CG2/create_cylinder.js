@@ -20,16 +20,41 @@ function create_file(sides, radius, height, vertexes, faces) {
   fs.writeFileSync(outputPath, content);
 }
 
+function get_normals(vec1, vec2, vec3) {
+  const u = [
+    vec2[0] - vec1[0],
+    vec2[1] - vec1[1],
+    vec2[2] - vec1[2],
+  ];
+  const v = [
+    vec3[0] - vec1[0],
+    vec3[1] - vec1[1],
+    vec3[2] - vec1[2],
+  ];
+
+  const normal = [
+    u[1] * v[2] - u[2] * v[1],
+    u[2] * v[0] - u[0] * v[2],
+    u[0] * v[1] - u[1] * v[0],
+  ];
+}
+
 function calculate_vectors(sides, radius, heigh) {
-  const v = [];
+  const v = []; // Vertexes
+  const f = []; // Faces
+  const vn = []; // Normal Vertexes
+  const v_cords = []; // Normal Vertexes
 
   // z axis level
   const z = heigh / 2;
   // Central vertex from bottom
   v.push(`v ${"0".padStart(8)
     } ${"0".padStart(8)} ${(-z).toFixed(4).padStart(8)} \n`);
+
+  v_cords.push(0, 0, (-z).toFixed(4).padStart(8))
   // Central vertex from Top
   v.push(`v ${"0".padStart(8)} ${"0".padStart(8)} ${z.toFixed(4).padStart(8)} \n`);
+  v_cords.push(0, 0, (z).toFixed(4).padStart(8))
 
 
   // Get x and y axis for each side
@@ -43,23 +68,40 @@ function calculate_vectors(sides, radius, heigh) {
     // Add axis to array for the file
     // Bottom face
     v.push(`v ${x} ${y} ${(-z).toFixed(4).padStart(8)} \n`);
+    v_cords.push(x, y, (-z).toFixed(4).padStart(8))
+
     // Top face
     v.push(`v ${x} ${y} ${z.toFixed(4).padStart(8)} \n`);
+    v_cords.push(x, y, (z).toFixed(4).padStart(8))
+
   }
 
   // Calculate bottom and top faces
-  const f = [];
   for (let index = 3; index < (sides * 2); index += 2) {
     // Bottom Face
-    f.push(`f 1 ${(index + 2)} ${index} \n`);
+    let normals = get_normals(v_cords[0], v_cords[index + 1], v_cords[index - 1]);
+    vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
+      } `)
+    f.push(`f 1/0/${vn.length} ${(index + 2)}/0/${vn.length} ${index}/0/${vn.length} \n`);
     // Top Face
-    f.push(`f 2 ${(index + 1)} ${(index + 3)} \n`);
+    normals = get_normals(v_cords[1], v_cords[index + 1], v_cords[index - 1]);
+    vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
+      } `)
+    f.push(`f 2/0/${vn.length} ${(index + 1)}/0/${vn.length} ${index + 3}/0/${vn.length} \n`);
+
+
   }
   // Last Bottom and Top Triangles
   // Bottom Face
-  f.push(`f 1 3 ${(sides * 2) + +1} \n`);
+  normals = get_normals(v_cords[0], v_cords[2], v_cords[(sides * 2)]);
+  vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
+    } `)
+  f.push(`f 1/0/${vn.length} 3/0/${vn.length} ${(sides * 2) + 1}/0/${vn.length} \n`);
   // Top Face
-  f.push(`f 2 ${(sides * 2) + 2} 4\n`);
+  normals = get_normals(v_cords[0], v_cords[2], v_cords[(sides * 2)]);
+  vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
+    } `)
+  f.push(`f 2/0/${vn.length} ${(sides * 2) + 2}/0/${vn.length} 4/0/${vn.length}\n`);
 
   // Lateral faces
   for (let vertex = 3; vertex < sides * 2; vertex += 2) {
@@ -105,7 +147,7 @@ function build_cylinder() {
     calculate_vectors(sides, radius, height); // Create file
     clearInterval(interval); // Stops animation
     // Over write with blanc spaces
-    process.stdout.write(`\r                                                                              `);
+    process.stdout.write(`\r`);
     console.log("\rFile creation completed!"); // Message when complete
   }, 4500); // Time of animation
 }

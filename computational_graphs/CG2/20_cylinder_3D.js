@@ -1,10 +1,8 @@
 /*
- * Base program for a 3D scene using the custom 3D library
- * Using twgl for boilerplate functions
- * The twgl and lil-gui libraries are installed with npm
+ * Using Phong shaders
  *
  * Gilberto Echeverria
- * 2024-11-06
+ * 2024-11-03
  */
 
 
@@ -12,187 +10,345 @@
 
 import * as twgl from 'twgl-base.js';
 import GUI from 'lil-gui';
-import cylinder from "./OutputFiles/cylinder_s8_r5_h1.obj?raw";
-import { load_obj } from './load_obj.js';
 import { v3, m4 } from './libs/starter_3D_lib';
 
+// Read the whole input file as a string
+// https://vitejs.dev/guide/assets.html#importing-asset-as-string
 // Define the shader code, using GLSL 3.00
-import vsGLSL from './assets/shaders/vs_color.glsl?raw';
-import fsGLSL from './assets/shaders/fs_color.glsl?raw';
+import vsGLSL from './assets/shaders/vs_phong.glsl?raw';
+import fsGLSL from './assets/shaders/fs_phong.glsl?raw';
+import { load_obj } from './load_obj.js';
+// import image from './OutputFiles/car.obj?raw'
+import image from './OutputFiles/cube_normals.obj?raw'
 
-// Global variables
-let programInfo = undefined;
-let gl = undefined;
-
-// Variable with the data for the object transforms, controlled by the UI
-const objects = {
+// Variables used for the object, and coltrolled from the UI
+const object = {
   model: {
-    transforms: {
-      // Translation
-      t: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-      // Rotation in degrees
-      rd: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-      // Rotation in radians
-      rr: {
-        x: 0,
-        y: 0,
-        z: 0
-      },
-      // Scale
-      s: {
-        x: 0.5,
-        y: 0.5,
-        z: 0.5
-      },
+    ambientColor: [0.3, 0.6, 0.6, 1.0],
+    diffuseColor: [0.3, 0.6, 0.6, 1.0],
+    specularColor: [0.3, 0.6, 0.6, 1.0],
+    shininess: 60.0,
+  },
+  transforms: {
+    // Translation
+    t: {
+      x: 0,
+      y: 0,
+      z: 0
     },
-    arrays: undefined,
-    bufferInfo: undefined,
-    vao: undefined,
+    // Rotation in degrees
+    rd: {
+      x: 0,
+      y: 0,
+      z: 0
+    },
+    // Rotation in radians
+    rr: {
+      x: 0,
+      y: 0,
+      z: 0
+    },
+    // Scale
+    s: {
+      x: 1.2,
+      y: 1.2,
+      z: 1.2
+    },
+    s_all: 1.2
   }
-}
+};
 
-function main() {
-  const canvas = document.querySelector('canvas');
-  gl = canvas.getContext('webgl2');
-  twgl.resizeCanvasToDisplaySize(gl.canvas);
-  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-
-  setupUI();
-
-  programInfo = twgl.createProgramInfo(gl, [vsGLSL, fsGLSL]);
-
-  // Prepare the object data and store it in the data structure
-  objects.model.arrays = load_obj(cylinder);
-  objects.model.bufferInfo = twgl.createBufferInfoFromArrays(gl, objects.model.arrays);
-  objects.model.vao = twgl.createVAOFromBufferInfo(gl, programInfo, objects.model.bufferInfo);
-
-  drawScene();
-}
-
-// Function to do the actual display of the objects
-function drawScene() {
-
-  // Clear the canvas
-  gl.clearColor(0, 0, 0, 1);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-  // tell webgl to cull faces
-  gl.enable(gl.CULL_FACE);
-
-  gl.useProgram(programInfo.program);
-
-  const viewProjectionMatrix = setupViewProjection(gl);
-
-  // Prepare the vector for translation and scale
-  // COMPLETE THIS SECTION //
-
-  let translate = [objects.model.transforms.t.x, objects.model.transforms.t.y, objects.model.transforms.t.z];
-  const traMat = m4.translation(translate);
-  // Rotation
-  let angles_radians_x = objects.model.transforms.rr.x;
-  let angles_radians_y = objects.model.transforms.rr.y;
-  let angles_radians_z = objects.model.transforms.rr.z;
-
-  const rotMatX = m4.rotationX(angles_radians_x);
-  const rotMatY = m4.rotationY(angles_radians_y);
-  const rotMatZ = m4.rotationZ(angles_radians_z);
-  // Scale
-  let scale = [objects.model.transforms.s.x, objects.model.transforms.s.y, objects.model.transforms.s.z];
-  const scaMat = m4.scale(scale);
-
-
-
-
-  // Create the individual transform matrices
-  // COMPLETE THIS SECTION //
-
-
-
-  // Create the composite matrix with all transformations
-  let transforms = m4.identity();
-  // COMPLETE THIS SECTION //
-
-
-
-  // Apply the projection to the final matrix
-  transforms = m4.multiply(scaMat, transforms);
-  transforms = m4.multiply(rotMatX, transforms);
-  transforms = m4.multiply(rotMatY, transforms);
-  transforms = m4.multiply(rotMatZ, transforms);
-  transforms = m4.multiply(traMat, transforms);
-  transforms = m4.multiply(viewProjectionMatrix, transforms);
-
-  console.log(transforms);
-
-  let uniforms = {
-    u_transforms: transforms,
+// Variables used for the object, and coltrolled from the UI
+const pivot = {
+  model: {
+    ambientColor: [0.3, 0.6, 0.6, 1.0],
+    diffuseColor: [0.3, 0.6, 0.6, 1.0],
+    specularColor: [0.3, 0.6, 0.6, 1.0],
+    shininess: 60.0,
+  },
+  transforms: {
+    // Translation
+    t: {
+      x: 0,
+      y: 0,
+      z: 0
+    },
+    // Rotation in degrees
+    rd: {
+      x: 0,
+      y: 0,
+      z: 0
+    },
+    // Rotation in radians
+    rr: {
+      x: 0,
+      y: 0,
+      z: 0
+    },
+    // Scale
+    s: {
+      x: 1.2,
+      y: 1.2,
+      z: 1.2
+    },
+    s_all: 1.2
   }
+};
 
-  twgl.setUniforms(programInfo, uniforms);
-  gl.bindVertexArray(objects.model.vao);
-  twgl.drawBufferInfo(gl, objects.model.bufferInfo);
+const settings = {
+  // Speed in degrees
+  rotationSpeed: {
+    x: 0,
+    y: 30,
+    z: 0,
+  },
+  cameraPosition: {
+    x: 0,
+    y: 0,
+    z: 10,
+  },
+  lightPosition: {
+    x: 10,
+    y: 10,
+    z: 10,
+  },
+  ambientColor: [0.5, 0.5, 0.5, 1.0],
+  diffuseColor: [0.5, 0.5, 0.5, 1.0],
+  specularColor: [0.5, 0.5, 0.5, 1.0],
+};
 
-  requestAnimationFrame(() => drawScene(gl));
-}
+const duration = 1000; // ms
+let then = 0;
 
-function setupViewProjection(gl) {
-  // Field of view of 60 degrees vertically, in radians
+let arrays = undefined;
+let pivot_arrays = undefined;
+let programInfo = undefined;
+let vao = undefined;
+let bufferInfo = undefined;
+
+function setupWorldView(gl) {
+  // Field of view of 60 degrees, in radians
   const fov = 60 * Math.PI / 180;
   const aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
 
   // Matrices for the world view
   const projectionMatrix = m4.perspective(fov, aspect, 1, 200);
 
-  const cameraPosition = [0, 0, 10];
+  const cameraPosition = [settings.cameraPosition.x,
+  settings.cameraPosition.y,
+  settings.cameraPosition.z];
   const target = [0, 0, 0];
   const up = [0, 1, 0];
-
   const cameraMatrix = m4.lookAt(cameraPosition, target, up);
-  const viewMatrix = m4.inverse(cameraMatrix);
-  const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
 
+  const viewMatrix = m4.inverse(cameraMatrix);
+
+  const viewProjectionMatrix = m4.multiply(projectionMatrix, viewMatrix);
   return viewProjectionMatrix;
 }
 
-// Setup a ui.
-function setupUI() {
+// Function to do the actual display of the objects
+function drawScene(gl) {
+  // Compute time elapsed since last frame
+  let now = Date.now();
+  let deltaTime = now - then;
+  const fract = deltaTime / duration;
+  then = now;
+
+  twgl.resizeCanvasToDisplaySize(gl.canvas);
+
+  gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+
+  // Clear the canvas
+  gl.clearColor(0, 0, 0, 1);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  // tell webgl to cull faces
+  gl.enable(gl.CULL_FACE);
+
+  // All objects will use the same program and vertices
+  gl.useProgram(programInfo.program);
+  gl.bindVertexArray(vao);
+
+  const viewProjectionMatrix = setupWorldView(gl);
+
+  // Convert the global transform values into twgl vectors
+
+  // Main object
+  let v3_trans = v3.create(object.transforms.t.x,
+    object.transforms.t.y,
+    object.transforms.t.z);
+  let v3_scale = v3.create(object.transforms.s.x,
+    object.transforms.s.y,
+    object.transforms.s.z);
+
+  // Pivot  object
+  let v3_trans_pivot = v3.create(pivot.transforms.t.x,
+    pivot.transforms.t.y,
+    pivot.transforms.t.z);
+
+  // Variable with the position of the light
+  let v3_lightPosition = v3.create(settings.lightPosition.x,
+    settings.lightPosition.y,
+    settings.lightPosition.z);
+  let v3_cameraPosition = v3.create(settings.cameraPosition.x,
+    settings.cameraPosition.y,
+    settings.cameraPosition.z);
+
+  let globalUniforms = {
+    u_viewWorldPosition: v3_cameraPosition,
+    u_lightWorldPosition: v3_lightPosition,
+    u_ambientLight: settings.ambientColor,
+    u_diffuseLight: settings.diffuseColor,
+    u_specularLight: settings.specularColor,
+  };
+  twgl.setUniforms(programInfo, globalUniforms);
+
+
+  // Matrices for the object world transforms
+  const traMat = m4.translation(v3_trans);
+  const rotXMat = m4.rotationX(object.transforms.rr.x);
+  const rotYMat = m4.rotationY(object.transforms.rr.y);
+  const rotZMat = m4.rotationZ(object.transforms.rr.z);
+  const scaMat = m4.scale(v3_scale);
+
+  const pivot_TraMat = m4.translation(v3_trans_pivot);
+
+  let world = m4.identity();
+  world = m4.multiply(traMat, world);
+  world = m4.multiply(rotXMat, world);
+  world = m4.multiply(rotYMat, world);
+  world = m4.multiply(rotZMat, world);
+  world = m4.multiply(scaMat, world);
+
+  let world_pivot = m4.identity();
+  world_pivot = m4.multiply(pivot_TraMat, world);
+
+  let worldViewProjection = m4.multiply(viewProjectionMatrix, world);
+
+  let transformsInverseTranspose = m4.identity();
+
+  let modelUniforms = {
+    u_transforms: worldViewProjection,
+
+    u_world: world,
+    u_worldInverseTransform: transformsInverseTranspose,
+    u_worldViewProjection: worldViewProjection,
+    u_ambientColor: object.model.ambientColor,
+    u_diffuseColor: object.model.diffuseColor,
+    u_specularColor: object.model.specularColor,
+    u_shininess: object.model.shininess,
+  }
+  twgl.setUniforms(programInfo, modelUniforms);
+  //console.log("MODEL UNIFORMS");
+  //console.log(modelUniforms);
+
+  twgl.drawBufferInfo(gl, bufferInfo);
+
+  requestAnimationFrame(() => drawScene(gl));
+}
+
+function setupUI(gl) {
+  // Create the UI elements for each value
   const gui = new GUI();
 
-  // Create the UI elements for each value
-  const traFolder = gui.addFolder('Translation:')
-  traFolder.add(objects.model.transforms.t, 'x', -5, 5)
-  traFolder.add(objects.model.transforms.t, 'y', -5, 5)
-  traFolder.add(objects.model.transforms.t, 'z', -5, 5)
+  // Model controllers
+  const modelFolder = gui.addFolder('Model:');
+  modelFolder.addColor(object.model, 'ambientColor')
+  modelFolder.addColor(object.model, 'diffuseColor')
+  modelFolder.addColor(object.model, 'specularColor')
+  modelFolder.add(object.model, 'shininess', 0, 600)
+    .decimals(2)
 
-  const rotFolder = gui.addFolder('Rotation:')
-  rotFolder.add(objects.model.transforms.rd, 'x', 0, 360)
+  const transformsFolder = gui.addFolder('Transforms')
+  const posFolder = transformsFolder.addFolder('Position:');
+  posFolder.add(object.transforms.t, 'x', -5, 5)
+    .decimals(2)
+  posFolder.add(object.transforms.t, 'y', -5, 5)
+    .decimals(2)
+  posFolder.add(object.transforms.t, 'z', -5, 5)
+    .decimals(2)
+  const rotFolder = transformsFolder.addFolder('Rotation:');
+  rotFolder.add(object.transforms.rd, 'x', 0, 360)
+    .decimals(2)
+    .listen()
     .onChange(value => {
-      objects.model.transforms.rd.x = value
-      objects.model.transforms.rr.x = value * Math.PI / 180;
+      object.transforms.rd.x = value
+      object.transforms.rr.x = object.transforms.rd.x * Math.PI / 180;
     });
-  rotFolder.add(objects.model.transforms.rd, 'y', 0, 360)
+  rotFolder.add(object.transforms.rd, 'y', 0, 360)
+    .decimals(2)
+    .listen()
     .onChange(value => {
-      objects.model.transforms.rd.y = value
-      objects.model.transforms.rr.y = value * Math.PI / 180;
+      object.transforms.rd.y = value
+      object.transforms.rr.y = object.transforms.rd.y * Math.PI / 180;
     });
-  rotFolder.add(objects.model.transforms.rd, 'z', 0, 360)
+  rotFolder.add(object.transforms.rd, 'z', 0, 360)
+    .decimals(2)
+    .listen()
     .onChange(value => {
-      objects.model.transforms.rd.z = value
-      objects.model.transforms.rr.z = value * Math.PI / 180;
+      object.transforms.rd.z = value
+      object.transforms.rr.z = object.transforms.rd.z * Math.PI / 180;
     });
+  const scaFolder = transformsFolder.addFolder('Scale:');
+  scaFolder.add(object.transforms, 's_all', -5, 5)
+    .decimals(2)
+    .onChange(value => {
+      object.transforms.s.x = value;
+      object.transforms.s.y = value;
+      object.transforms.s.z = value;
+    });
+  scaFolder.add(object.transforms.s, 'x', -5, 5)
+    .decimals(2)
+    .listen()
+  scaFolder.add(object.transforms.s, 'y', -5, 5)
+    .decimals(2)
+    .listen()
+  scaFolder.add(object.transforms.s, 'z', -5, 5)
+    .decimals(2)
+    .listen()
 
-  const scaFolder = gui.addFolder('Scale:')
-  scaFolder.add(objects.model.transforms.s, 'x', -5, 5)
-  scaFolder.add(objects.model.transforms.s, 'y', -5, 5)
-  scaFolder.add(objects.model.transforms.s, 'z', -5, 5)
+  // Pivot Folder
+  const pivot_Folder = gui.addFolder('Pivot: ')
+  pivot_Folder.add(pivot.transforms.t, 'x', -5, 5)
+    .decimals(2)
+  pivot_Folder.add(pivot.transforms.t, 'y', -5, 5)
+    .decimals(2)
+  pivot_Folder.add(pivot.transforms.t, 'z', -5, 5)
+    .decimals(2)
+
+  // Settings for the animation
+  const lightFolder = gui.addFolder('Light:')
+  lightFolder.add(settings.lightPosition, 'x', -20, 20)
+    .decimals(2)
+  lightFolder.add(settings.lightPosition, 'y', -20, 20)
+    .decimals(2)
+  lightFolder.add(settings.lightPosition, 'z', -20, 20)
+    .decimals(2)
+  lightFolder.addColor(settings, 'ambientColor')
+  lightFolder.addColor(settings, 'diffuseColor')
+  lightFolder.addColor(settings, 'specularColor')
+}
+
+function main() {
+  const canvas = document.querySelector('canvas');
+  const gl = canvas.getContext('webgl2');
+
+  setupUI(gl);
+
+  programInfo = twgl.createProgramInfo(gl, [vsGLSL, fsGLSL]);
+  // Set the default shape to be used
+  arrays = load_obj(image);
+  pivot_arrays = load_obj(image);
+  // Configure the Phong colors
+  arrays.a_ambientColor = object.model.ambientColor;
+  arrays.a_diffuseColor = object.model.diffuseColor;
+  arrays.a_specularColor = object.model.specularColor;
+  bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays, pivot_arrays);
+  vao = twgl.createVAOFromBufferInfo(gl, programInfo, bufferInfo);
+
+  drawScene(gl);
 }
 
 main()
