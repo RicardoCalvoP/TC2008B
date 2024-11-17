@@ -1,12 +1,16 @@
 // Ricardo Alfredo Calvo Perez - A01028889
-// 29/10/2024
+// 17/11/2024
 // Create an .obj file to create a cylinder of n sides
 // node create_cylinder.js [sides] [radius] [height]
-
 // Function to create file
-function create_file(sides, radius, height, vertexes, faces) {
-  const fs = require('fs'); // Library to create files
-  const path = require('path'); // Library to check paths
+
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function create_file(sides, radius, height, vertexes, faces, normals) {
   const outputDir = path.join(__dirname, 'OutputFiles'); // CurrentLocation/OutputFiles
   const fileName = `cylinder_s${sides}_r${radius}_h${height}.obj`; // Create name of new file by number of sides .obj
   const outputPath = path.join(outputDir, fileName); // Final directory with folder and new file CurrentLocation/OutputFiles/cylinder_${sides}.obj
@@ -16,7 +20,7 @@ function create_file(sides, radius, height, vertexes, faces) {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const content = `# Cylinder with ${sides} sides, radius ${radius}, height ${height}\n\n${vertexes.join('')}\n\n${faces.join('')}`;
+  const content = `# Cylinder with ${sides} sides, radius ${radius}, height ${height}\n\n${vertexes.join('')}\n\n${normals.join('')}\n\n${faces.join('')}`;
   fs.writeFileSync(outputPath, content);
 }
 
@@ -37,6 +41,7 @@ function get_normals(vec1, vec2, vec3) {
     u[2] * v[0] - u[0] * v[2],
     u[0] * v[1] - u[1] * v[0],
   ];
+  return normal;
 }
 
 function calculate_vectors(sides, radius, heigh) {
@@ -51,10 +56,10 @@ function calculate_vectors(sides, radius, heigh) {
   v.push(`v ${"0".padStart(8)
     } ${"0".padStart(8)} ${(-z).toFixed(4).padStart(8)} \n`);
 
-  v_cords.push(0, 0, (-z).toFixed(4).padStart(8))
+  v_cords.push([0, 0, (-z).toFixed(4).padStart(8)])
   // Central vertex from Top
   v.push(`v ${"0".padStart(8)} ${"0".padStart(8)} ${z.toFixed(4).padStart(8)} \n`);
-  v_cords.push(0, 0, (z).toFixed(4).padStart(8))
+  v_cords.push([0, 0, (z).toFixed(4).padStart(8)])
 
 
   // Get x and y axis for each side
@@ -68,51 +73,67 @@ function calculate_vectors(sides, radius, heigh) {
     // Add axis to array for the file
     // Bottom face
     v.push(`v ${x} ${y} ${(-z).toFixed(4).padStart(8)} \n`);
-    v_cords.push(x, y, (-z).toFixed(4).padStart(8))
+    v_cords.push([x, y, (-z).toFixed(4).padStart(8)])
 
     // Top face
     v.push(`v ${x} ${y} ${z.toFixed(4).padStart(8)} \n`);
-    v_cords.push(x, y, (z).toFixed(4).padStart(8))
+    v_cords.push([x, y, (z).toFixed(4).padStart(8)])
 
   }
-
+  console.log(v_cords);
   // Calculate bottom and top faces
   for (let index = 3; index < (sides * 2); index += 2) {
     // Bottom Face
     let normals = get_normals(v_cords[0], v_cords[index + 1], v_cords[index - 1]);
     vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
-      } `)
-    f.push(`f 1/0/${vn.length} ${(index + 2)}/0/${vn.length} ${index}/0/${vn.length} \n`);
+      } \n`)
+    f.push(`f 1//${vn.length} ${(index + 2)}//${vn.length} ${index}//${vn.length} \n`);
+
     // Top Face
     normals = get_normals(v_cords[1], v_cords[index + 1], v_cords[index - 1]);
     vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
-      } `)
-    f.push(`f 2/0/${vn.length} ${(index + 1)}/0/${vn.length} ${index + 3}/0/${vn.length} \n`);
+      } \n`)
+    f.push(`f 2//${vn.length} ${(index + 1)}//${vn.length} ${index + 3}//${vn.length} \n`);
 
 
   }
   // Last Bottom and Top Triangles
   // Bottom Face
-  normals = get_normals(v_cords[0], v_cords[2], v_cords[(sides * 2)]);
+  let normals = get_normals(v_cords[0], v_cords[2], v_cords[(sides * 2)]);
   vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
-    } `)
-  f.push(`f 1/0/${vn.length} 3/0/${vn.length} ${(sides * 2) + 1}/0/${vn.length} \n`);
+    } \n`)
+  f.push(`f 1//${vn.length} 3//${vn.length} ${(sides * 2) + 1}//${vn.length} \n`);
+
   // Top Face
   normals = get_normals(v_cords[0], v_cords[2], v_cords[(sides * 2)]);
   vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
-    } `)
-  f.push(`f 2/0/${vn.length} ${(sides * 2) + 2}/0/${vn.length} 4/0/${vn.length}\n`);
+    } \n`)
+  f.push(`f 2//${vn.length} ${(sides * 2) + 2}//${vn.length} 4//${vn.length}\n`);
 
   // Lateral faces
   for (let vertex = 3; vertex < sides * 2; vertex += 2) {
-    f.push(`f ${vertex} ${vertex + 2} ${vertex + 1} \n`);
-    f.push(`f ${vertex + 3} ${vertex + 1} ${vertex + 2} \n`);
+    normals = get_normals(v_cords[vertex - 1], v_cords[vertex + 1], v_cords[vertex]);
+    vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
+      } \n`)
+    f.push(`f ${vertex}//${vn.length} ${vertex + 2}//${vn.length} ${vertex + 1}//${vn.length} \n`);
+
+    normals = get_normals(v_cords[vertex + 2], v_cords[vertex], v_cords[vertex + 1]);
+    vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
+      } \n`)
+    f.push(`f ${vertex + 3}//${vn.length} ${vertex + 1}//${vn.length} ${vertex + 2}//${vn.length} \n`);
   }
 
-  f.push(`f ${(sides * 2) + 1} 3 ${(sides * 2) + 2} \n`);
-  f.push(`f 4 ${(sides * 2) + 2} 3 \n`);
+  normals = get_normals(v_cords[(sides * 2)], v_cords[2], v_cords[(sides * 2) + 1]);
+  vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
+    } \n`)
+  f.push(`f ${(sides * 2) + 1}//${vn.length} 3//${vn.length} ${(sides * 2) + 2}//${vn.length} \n`);
 
-  create_file(sides, radius, heigh, v, f)
+  normals = get_normals(v_cords[3], v_cords[(sides * 2) + 1], v_cords[2]);
+  vn.push(`vn ${(normals[0].toFixed(4).padStart(8))} ${(normals[1].toFixed(4).padStart(8))} ${(normals[2].toFixed(4).padStart(8))
+    } \n`)
+  f.push(`f 4//${vn.length} ${(sides * 2) + 2}//${vn.length} 3//${vn.length} \n`);
+
+  create_file(sides, radius, heigh, v, f, vn)
 }
 
 function build_cylinder() {

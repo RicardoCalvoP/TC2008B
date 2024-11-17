@@ -1,5 +1,5 @@
 // Ricardo Alfredo Calvo Perez - A01028889
-// 13/11/2024
+// 17/11/2024
 // Create an .js file with the cylinder obj attributes
 // node load_objs.js [path]
 
@@ -36,9 +36,9 @@ function load_obj(content) {
     }
   }
 
-  console.log(vertices);
-  console.log(a_normal);
-  console.log(a_position);
+  // console.log(vertices);
+  // console.log(a_normal);
+  // console.log(a_position);
 
 
   const arrays = {
