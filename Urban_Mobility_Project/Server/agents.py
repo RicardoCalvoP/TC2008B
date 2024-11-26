@@ -34,31 +34,85 @@ class Car(Agent):
     def __init__(self, unique_id, position, destination, streets, model):
         super().__init__(unique_id, model)
         self.steps_taken = 0
-        self.destination = destination
         self.path = []
         self.pos = position
         self.destination = destination
         self.streets = streets
+        self.last_position = position
 
     def Move(self):
         """
-        Moves the car along the precomputed path.
+        Moves the car based on the direction of the current road tile and traffic light state.
         """
-        if self.steps_taken + 1 < len(self.path):  # Validate there are more steps
-            next_pos = self.path[self.steps_taken + 1]
-            agents_in_cell = self.model.grid.get_cell_list_contents(next_pos)
-            if all(not isinstance(agent, Car) for agent in agents_in_cell):  # Check if the cell is free
-                self.model.grid.move_agent(self, next_pos)
-                self.steps_taken += 1
+        # Obtener la dirección del piso en la posición actual
+        road_tile = self.model.grid.get_cell_list_contents([self.pos])
+        direction = None
 
-    def get_neighbors_from_list(self, streets, current_node):
+        for agent in road_tile:
+            if isinstance(agent, Road):  # Verificar si el agente es una carretera
+                direction = agent.direction
+
+        if direction is None:
+            print(f"Car {self.unique_id} is not on a road.")
+            return  # No hacer nada si no está sobre una carretera
+
+        # Calcular la nueva posición según la dirección actual
+        new_position = self.calculate_new_position(self.pos, direction)
+
+        # Verificar si la nueva posición contiene un semáforo
+        agents_in_new_cell = self.model.grid.get_cell_list_contents([
+                                                                    new_position])
+        for agent in agents_in_new_cell:
+            if isinstance(agent, Traffic_Light):
+                traffic_light_next_position = self.calculate_new_position(
+                    new_position, direction)
+                if not agent.condition:  # Semáforo en rojo
+                    print(
+                        f"Car {self.unique_id} stops at red light at {new_position}")
+                    return  # Detener el movimiento
+                else:
+                    print(
+                        f"Car {self.unique_id} passes green light at {new_position}")
+
+        # Verificar si la nueva celda está libre
+        agents_in_cell = self.model.grid.get_cell_list_contents([new_position])
+        if not any(isinstance(agent, Car) for agent in agents_in_cell):  # Celda libre
+            self.model.grid.move_agent(self, new_position)
+        else:
+            print(
+                f"Car {self.unique_id} cannot move to {new_position}, cell is occupied.")
+        if any(isinstance(agent, Traffic_Light) for agent in self.model.grid.get_cell_list_contents([self.pos])):
+            self.model.grid.move_agent(self, traffic_light_next_position)
+
+    def calculate_new_position(self, position, direction):
         """
-        Finds all neighbors of a node in the streets list.
-        Args:
-            streets (list): List of street connections.
-            current_node (tuple): Current position (x, y).
-        Returns:
-            list: List of tuples (neighbor_node, weight).
+        Calculate the new position based on the direction.
+        """
+        directions = {
+            "Up": (0, 1),
+            "Down": (0, -1),
+            "Left": (-1, 0),
+            "Right": (1, 0),
+        }
+        dx, dy = directions[direction]
+        return (position[0] + dx, position[1] + dy)
+
+    def calculate_new_position(self, position, direction):
+        """
+        Calculate the new position based on the direction.
+        """
+        directions = {
+            "Up": (0, 1),
+            "Down": (0, -1),
+            "Left": (-1, 0),
+            "Right": (1, 0),
+        }
+        dx, dy = directions[direction]
+        return (position[0] + dx, position[1] + dy)
+
+    def get_neighbors_from_list(self, streets, current_node, _):
+        """
+        Encuentra todos los vecinos de un nodo en la lista de calles.
         """
         directions = {
             "Down": (0, -1),
@@ -72,12 +126,12 @@ class Car(Agent):
             if node == current_node:
                 dx, dy = directions[direction]
                 neighbor = (node[0] + dx, node[1] + dy)
-                neighbors.append((neighbor, 1))  # Weight is 1 by default
+                neighbors.append((neighbor, 1))  # Peso fijo
         return neighbors
 
     def get_path(self, streets, start, destination):
         """
-        BFS para encontrar el camino más corto desde 'start' hasta 'destination'.
+        BFS para encontrar el camino más corto desde 'start' hasta la calle vecina al 'destination'.
         Args:
             streets (list): Lista de conexiones de calles.
             start (tuple): Nodo inicial (posición x, y).
@@ -85,44 +139,71 @@ class Car(Agent):
         Returns:
             list: Camino más corto desde 'start' hasta 'destination'.
         """
-        queue = deque([[start]])  # Cada elemento de la cola es un camino
-        visited = set()  # Nodos visitados
+        from collections import deque
+
+        # Encuentra la calle vecina al destino
+        directions = {
+            "Down": (0, -1),
+            "Up": (0, 1),
+            "Left": (-1, 0),
+            "Right": (1, 0),
+        }
+
+        # Generar vecinos del destino
+        destination_neighbors = [
+            (destination[0] + dx, destination[1] + dy)
+            for dx, dy in directions.values()
+        ]
+
+        # Buscar la calle vecina que coincide
+        neighboring_street = None
+        for neighbor in destination_neighbors:
+            if any(node == neighbor for node, _ in streets):
+                neighboring_street = neighbor
+                break
+
+        if not neighboring_street:
+            print(
+                f"No se encontró una calle vecina para el destino {destination}.")
+            return []
+
+        print(f"Calle vecina al destino {destination}: {neighboring_street}")
+
+        # Realizar BFS desde 'start' hasta 'neighboring_street'
+        queue = deque([[start]])
+        visited = set()
         visited.add(start)
 
         while queue:
             path = queue.popleft()
             current_pos = path[-1]
 
-            # Si alcanzamos el destino, devolvemos el camino
-            if current_pos == destination:
-                return path
+            if current_pos == neighboring_street:
+                # Agregar el destino como paso final
+                return path + [destination]
 
             # Obtener vecinos del nodo actual
-            neighbors = self.get_neighbors_from_list(streets, current_pos)
-            for neighbor, _ in neighbors:  # Ignoramos el peso en BFS
+            neighbors = self.get_neighbors_from_list(streets, current_pos, [])
+            for neighbor, _ in neighbors:
                 if neighbor not in visited:
                     visited.add(neighbor)
-                    # Agregamos el nuevo camino
                     queue.append(path + [neighbor])
 
-        # Si no hay un camino disponible
-        print("No path found")
+        print(
+            f"No se encontró un camino desde {start} hasta {neighboring_street}.")
         return []
 
     def step(self):
         """
         Perform a single step in the simulation.
         """
-
-        print("position: ", self.pos, "destination:", self.destination)
         if self.pos == self.destination:
-            # Remove agent upon reaching destination
+            # Remover agente al llegar al destino
             self.model.grid.remove_agent(self)
 
         if not self.path and self.pos != self.destination:
             self.path = self.get_path(self.streets, self.pos, self.destination)
 
-        print(self.path)
         if self.pos != self.destination:
             self.Move()
 

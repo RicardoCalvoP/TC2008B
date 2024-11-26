@@ -34,6 +34,7 @@ class City(Model):
                           (0, height-1), (width-1, height-1)]
         self.streets = []
         self.num_cars = 0
+        self.num_steps = 0
         try:
 
             # Load the map dictionary. The dictionary maps the characters in the map file to the corresponding agent.
@@ -55,6 +56,7 @@ class City(Model):
                                 agent, pos)
                             self.streets.append((pos, agent.direction))
                         # Traffic Ligths
+
                         elif col in ["S", "s"]:
                             agent = Traffic_Light(
                                 f"tl{r*self.width+c}", False if col == "S" else True, int(dataDictionary[col]), self)
@@ -76,7 +78,6 @@ class City(Model):
                             self.grid.place_agent(
                                 agent, pos)
                             self.destinations.append(pos)
-
             for i in range(4):
                 destination = random.choice(self.destinations)
                 pos = self.carSpawns[i]
@@ -92,35 +93,18 @@ class City(Model):
         except Exception as e:
             print(f"Error inesperado: {e}")
 
-    def create_adjacency_matrix(self, moore=False):
-        width, height = self.grid.width, self.grid.height
-        total_nodes = width * height
-
-        # Inicializar matriz de adyacencia
-        adjacency_matrix = np.zeros((total_nodes, total_nodes), dtype=int)
-
-        for cell_pos in self.grid.coord_iter():
-            cell_content, x, y = cell_pos
-
-            # Convertir coordenadas de la celda a índice único
-            current_index = y * width + x
-
-            # Obtener las celdas vecinas
-            neighbors = self.grid.get_neighbors(
-                (x, y), moore=moore, include_center=False)
-
-            for neighbor in neighbors:
-                neighbor_pos = self.grid.find_cell(neighbor)
-                if neighbor_pos:
-                    # Convertir coordenadas del vecino a índice único
-                    neighbor_index = neighbor_pos[1] * width + neighbor_pos[0]
-                    adjacency_matrix[current_index, neighbor_index] = 1
-
-        return adjacency_matrix
-
-    def DFS(self):
-        pass
-
     def step(self):
         '''Advance the model by one step.'''
         self.schedule.step()
+        self.num_steps += 1
+
+        if self.num_steps % 10 == 0:
+            for i in range(4):
+                destination = random.choice(self.destinations)
+                pos = self.carSpawns[i]
+                agent = Car(f"ca{self.num_cars+1000+i}", pos,
+                            destination, self.streets, self)
+                self.grid.place_agent(
+                    agent, pos)
+                self.schedule.add(agent)
+                self.num_cars += 1
