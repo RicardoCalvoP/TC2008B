@@ -26,10 +26,9 @@ def agent_portrayal(agent):
                  }
 
     if (isinstance(agent, Car)):
-        portrayal["Shape"] = "rect"
+        portrayal["Shape"] = "circle"
         portrayal["Filled"] = "true"
-        portrayal["w"] = 0.8
-        portrayal["h"] = 0.8
+        portrayal["r"] = 0.69
         portrayal["Layer"] = 1
         portrayal["Color"] = "purple"
     if (isinstance(agent, Road)):

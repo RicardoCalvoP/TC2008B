@@ -58,13 +58,51 @@ class City(Model):
                         # Traffic Ligths
 
                         elif col in ["S", "s"]:
+
+                            pos = (c, self.height - r - 1)
+
+                            if col == "S":
+                                # Para semáforo "S": primero arriba, luego abajo
+                                above = (pos[0], pos[1] + 1)
+                                below = (pos[0], pos[1] - 1)
+
+                                # Verificar condiciones para arriba
+                                direction_above = self.get_direction_of_road(
+                                    above)
+                                if direction_above in ["Up", "Down"]:
+                                    direction = direction_above
+                                else:
+                                    # Verificar condiciones para abajo
+                                    direction_below = self.get_direction_of_road(
+                                        below)
+                                    direction = direction_below if direction_below in [
+                                        "Up", "Down"] else None
+
+                            elif col == "s":
+                                # Para semáforo "s": primero izquierda, luego derecha
+                                left = (pos[0] - 1, pos[1])
+                                right = (pos[0] + 1, pos[1])
+
+                                # Verificar condiciones para izquierda
+                                direction_left = self.get_direction_of_road(
+                                    left)
+                                if direction_left in ["Left", "Right"]:
+                                    direction = direction_left
+                                else:
+                                    # Verificar condiciones para derecha
+                                    direction_right = self.get_direction_of_road(
+                                        right)
+                                    direction = direction_right if direction_right in [
+                                        "Left", "Right"] else "Left"
                             agent = Traffic_Light(
-                                f"tl{r*self.width+c}", False if col == "S" else True, int(dataDictionary[col]), self)
+                                f"tl{r*self.width+c}", False if col == "S" else True, int(dataDictionary[col]), direction, self)
                             pos = (c, self.height - r - 1)
                             self.grid.place_agent(
                                 agent, pos)
                             self.schedule.add(agent)
                             self.traffic_lights.append(agent)
+                            self.streets.append((pos, agent.direction))
+
                         # Buildings
                         elif col == "#":
                             agent = Obstacle(f"ob{r*self.width+c}", self)
@@ -92,6 +130,19 @@ class City(Model):
             print(f"Error: No se encontró el archivo. en model")
         except Exception as e:
             print(f"Error inesperado: {e}")
+
+    def get_direction_of_road(self, position):
+        """
+        Check if the given position contains a Road and return its direction.
+        """
+        if not (0 <= position[0] < self.width and 0 <= position[1] < self.height):
+            return None  # Posición fuera de los límites
+
+        agents_in_cell = self.grid.get_cell_list_contents([position])
+        for agent in agents_in_cell:
+            if isinstance(agent, Road):  # Verificar si es un Road
+                return agent.direction  # Retornar la dirección de la carretera
+        return None  # No hay un Road en esta posición
 
     def step(self):
         '''Advance the model by one step.'''

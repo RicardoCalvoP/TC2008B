@@ -44,58 +44,35 @@ class Car(Agent):
         """
         Moves the car based on the direction of the current road tile and traffic light state.
         """
-        # Obtener la dirección del piso en la posición actual
-        road_tile = self.model.grid.get_cell_list_contents([self.pos])
-        direction = None
+       # Obtener el agente en la posición actual
+        agents_in_cell = self.model.grid.get_cell_list_contents([self.pos])
+        current_direction = None
 
-        for agent in road_tile:
-            if isinstance(agent, Road):  # Verificar si el agente es una carretera
-                direction = agent.direction
+        for agent in agents_in_cell:
+            if isinstance(agent, Road) or isinstance(agent, Traffic_Light):
+                current_direction = agent.direction
+                break  # Encontramos la dirección, no necesitamos seguir buscando
 
-        if direction is None:
-            print(f"Car {self.unique_id} is not on a road.")
-            return  # No hacer nada si no está sobre una carretera
+        if current_direction is None:
+
+            return  # No hacer nada si no hay dirección actual
 
         # Calcular la nueva posición según la dirección actual
-        new_position = self.calculate_new_position(self.pos, direction)
+        new_position = self.calculate_new_position(self.pos, current_direction)
 
         # Verificar si la nueva posición contiene un semáforo
         agents_in_new_cell = self.model.grid.get_cell_list_contents([
                                                                     new_position])
         for agent in agents_in_new_cell:
             if isinstance(agent, Traffic_Light):
-                traffic_light_next_position = self.calculate_new_position(
-                    new_position, direction)
                 if not agent.condition:  # Semáforo en rojo
-                    print(
-                        f"Car {self.unique_id} stops at red light at {new_position}")
                     return  # Detener el movimiento
-                else:
-                    print(
-                        f"Car {self.unique_id} passes green light at {new_position}")
 
         # Verificar si la nueva celda está libre
         agents_in_cell = self.model.grid.get_cell_list_contents([new_position])
         if not any(isinstance(agent, Car) for agent in agents_in_cell):  # Celda libre
-            self.model.grid.move_agent(self, new_position)
-        else:
-            print(
-                f"Car {self.unique_id} cannot move to {new_position}, cell is occupied.")
-        if any(isinstance(agent, Traffic_Light) for agent in self.model.grid.get_cell_list_contents([self.pos])):
-            self.model.grid.move_agent(self, traffic_light_next_position)
 
-    def calculate_new_position(self, position, direction):
-        """
-        Calculate the new position based on the direction.
-        """
-        directions = {
-            "Up": (0, 1),
-            "Down": (0, -1),
-            "Left": (-1, 0),
-            "Right": (1, 0),
-        }
-        dx, dy = directions[direction]
-        return (position[0] + dx, position[1] + dy)
+            self.model.grid.move_agent(self, new_position)
 
     def calculate_new_position(self, position, direction):
         """
@@ -215,9 +192,9 @@ class Traffic_Light(Agent):
     from green to red and from red to green
     """
 
-    def __init__(self, unique_id,  condition, timeToChange, model):
+    def __init__(self, unique_id,  condition, timeToChange, direction, model):
         super().__init__(unique_id, model)
-
+        self.direction = direction
         self.condition = condition
         self.timeToChange = timeToChange
 
