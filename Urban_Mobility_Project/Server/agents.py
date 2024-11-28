@@ -15,174 +15,118 @@ from mesa import Agent
 import math
 
 import heapq
-from collections import deque
 
+import heapq
+
+import heapq
+from mesa import Agent
+
+import heapq
+from mesa import Agent
 
 class Car(Agent):
-    """
-    Car Agent moves depending on the state on the road
-    following the correct path to get to the destination.
-
-    Attributes:
-        - unique_id: Unique identifier for the agent.
-        - position: Current position of the car.
-        - destination: Target position.
-        - streets: List of tuples representing the street connections.
-        - model: Reference to the simulation model.
-    """
-
     def __init__(self, unique_id, position, destination, streets, model):
+        """
+        Initialize the Car agent with position, destination, and streets.
+        """
         super().__init__(unique_id, model)
-        self.steps_taken = 0
-        self.path = []
-        self.pos = position
+        self.identification = unique_id
+        self.lastPosition = position
+        self.position = position
         self.destination = destination
-        self.streets = streets
-        self.last_position = position
+        self.streets = streets  # List of (position, direction)
+        self.path = []  # Calculated path to the destination
 
-    def Move(self):
+    def findDirections(self, last_position, current_pos, next_pos):
         """
-        Moves the car based on the direction of the current road tile and traffic light state.
+        Validate the movement between positions respecting direction constraints.
         """
-       # Obtener el agente en la posición actual
-        agents_in_cell = self.model.grid.get_cell_list_contents([self.pos])
-        current_direction = None
+        _, last_direction = last_position
+        _, direction = current_pos
+        _, next_direction = next_pos
 
-        for agent in agents_in_cell:
-            if isinstance(agent, Road) or isinstance(agent, Traffic_Light):
-                current_direction = agent.direction
-                break  # Encontramos la dirección, no necesitamos seguir buscando
+        if next_direction == "s":
+            next_direction = last_direction
 
-        if current_direction is None:
+        if direction == "Left" and next_direction == "Right":
+            return False
+        if direction == "Right" and next_direction == "Left":
+            return False
+        if direction == "Down" and next_direction == "Up":
+            return False
+        if direction == "Up" and next_direction == "Down":
+            return False
+        return True
 
-            return  # No hacer nada si no hay dirección actual
-
-        # Calcular la nueva posición según la dirección actual
-        new_position = self.calculate_new_position(self.pos, current_direction)
-
-        # Verificar si la nueva posición contiene un semáforo
-        agents_in_new_cell = self.model.grid.get_cell_list_contents([
-                                                                    new_position])
-        for agent in agents_in_new_cell:
-            if isinstance(agent, Traffic_Light):
-                if not agent.condition:  # Semáforo en rojo
-                    return  # Detener el movimiento
-
-        # Verificar si la nueva celda está libre
-        agents_in_cell = self.model.grid.get_cell_list_contents([new_position])
-        if not any(isinstance(agent, Car) for agent in agents_in_cell):  # Celda libre
-
-            self.model.grid.move_agent(self, new_position)
-
-    def calculate_new_position(self, position, direction):
+    def find_path(self):
         """
-        Calculate the new position based on the direction.
+        Implementa A* para encontrar el camino más corto mientras respeta las reglas de movimiento.
         """
-        directions = {
-            "Up": (0, 1),
-            "Down": (0, -1),
-            "Left": (-1, 0),
-            "Right": (1, 0),
-        }
-        dx, dy = directions[direction]
-        return (position[0] + dx, position[1] + dy)
+        def heuristic(a, b):
+            # Distancia Manhattan
+            return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-    def get_neighbors_from_list(self, streets, current_node, _):
-        """
-        Encuentra todos los vecinos de un nodo en la lista de calles.
-        """
-        directions = {
-            "Down": (0, -1),
-            "Up": (0, 1),
-            "Left": (-1, 0),
-            "Right": (1, 0),
-        }
+        open_set = []
+        heapq.heappush(open_set, (0, self.position, None))  # (f_score, position, direction)
+        came_from = {}  # Diccionario para rastrear el camino
+        g_score = {self.position: 0}  # Costo del camino más corto hacia un nodo
+        f_score = {self.position: heuristic(self.position, self.destination)}  # Estimación del costo total
 
-        neighbors = []
-        for node, direction in streets:
-            if node == current_node:
-                dx, dy = directions[direction]
-                neighbor = (node[0] + dx, node[1] + dy)
-                neighbors.append((neighbor, 1))  # Peso fijo
-        return neighbors
-
-    def get_path(self, streets, start, destination):
-        """
-        BFS para encontrar el camino más corto desde 'start' hasta la calle vecina al 'destination'.
-        Args:
-            streets (list): Lista de conexiones de calles.
-            start (tuple): Nodo inicial (posición x, y).
-            destination (tuple): Nodo destino (posición x, y).
-        Returns:
-            list: Camino más corto desde 'start' hasta 'destination'.
-        """
-        from collections import deque
-
-        # Encuentra la calle vecina al destino
-        directions = {
-            "Down": (0, -1),
-            "Up": (0, 1),
-            "Left": (-1, 0),
-            "Right": (1, 0),
-        }
-
-        # Generar vecinos del destino
-        destination_neighbors = [
-            (destination[0] + dx, destination[1] + dy)
-            for dx, dy in directions.values()
-        ]
-
-        # Buscar la calle vecina que coincide
-        neighboring_street = None
-        for neighbor in destination_neighbors:
-            if any(node == neighbor for node, _ in streets):
-                neighboring_street = neighbor
-                break
-
-        if not neighboring_street:
-            print(
-                f"No se encontró una calle vecina para el destino {destination}.")
-            return []
-
-        print(f"Calle vecina al destino {destination}: {neighboring_street}")
-
-        # Realizar BFS desde 'start' hasta 'neighboring_street'
-        queue = deque([[start]])
         visited = set()
-        visited.add(start)
 
-        while queue:
-            path = queue.popleft()
-            current_pos = path[-1]
+        while open_set:
+            _, current, current_dir = heapq.heappop(open_set)
 
-            if current_pos == neighboring_street:
-                # Agregar el destino como paso final
-                return path + [destination]
+            if current in visited:
+                continue
+            visited.add(current)
 
-            # Obtener vecinos del nodo actual
-            neighbors = self.get_neighbors_from_list(streets, current_pos, [])
-            for neighbor, _ in neighbors:
-                if neighbor not in visited:
-                    visited.add(neighbor)
-                    queue.append(path + [neighbor])
+            # Si llegamos al destino, reconstruimos el camino
+            if current == self.destination:
+                path = []
+                while current in came_from:
+                    path.append(current)
+                    current = came_from[current]
+                path.reverse()
+                self.path = path
+                print(f"Path found: {self.path}")
+                return
 
-        print(
-            f"No se encontró un camino desde {start} hasta {neighboring_street}.")
-        return []
+            # Vecinos válidos basados en las calles
+            neighbors = [
+                (pos, dir) for (pos, dir) in self.streets
+                if self.findDirections((self.lastPosition, None), (current, current_dir), (pos, dir)) and pos not in visited
+            ]
+
+            for neighbor, neighbor_dir in neighbors:
+                tentative_g_score = g_score[current] + 1
+                if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                    # Actualizamos `came_from` y los puntajes
+                    came_from[neighbor] = current
+                    g_score[neighbor] = tentative_g_score
+                    f_score[neighbor] = tentative_g_score + heuristic(neighbor, self.destination)
+                    heapq.heappush(open_set, (f_score[neighbor], neighbor, neighbor_dir))
+
+        # Si no se encuentra camino
+        self.path = []
+        print(f"No path found from {self.position} to {self.destination}.")
 
     def step(self):
         """
-        Perform a single step in the simulation.
+        Execute a single step for the Car agent.
         """
-        if self.pos == self.destination:
-            # Remover agente al llegar al destino
-            self.model.grid.remove_agent(self)
+        if not self.path:
+            self.find_path()  # Calculate the path if it doesn't exist
 
-        if not self.path and self.pos != self.destination:
-            self.path = self.get_path(self.streets, self.pos, self.destination)
+        if self.path:
+            # Move to the next step in the path
+            next_pos = self.path.pop(0)
+            self.lastPosition = self.position
+            self.position = next_pos
+            self.model.grid.move_agent(self, next_pos)
 
-        if self.pos != self.destination:
-            self.Move()
+            # Debug: Print the full path and current step
+            print(f"Car {self.identification} moved to {next_pos}. Current path: {self.path}")
 
 
 class Traffic_Light(Agent):
